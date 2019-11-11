@@ -1,0 +1,29 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[packages]
+ipython = "*"
+pytest = "*"
+jupyter = "*"
+matplotlib = "*"
+torch = "*"
+torchvision = "*"
+numpy = "*"
+pillow = "*"
+tqdm = "*"
+#onnx-coreml = "*"
+onnx-coreml = {git = 'https://github.com/onnx/onnx-coreml.git', ref ='master', editable= true}
+#onnxmltools = "*"
+onnxmltools = {git = 'https://github.com/onnx/onnx-coreml.git', ref = 'master',editable = true}
+netron = "*"
+coremltools = "*"
+#coremltools = {git= 'https://github.com/apple/coremltools.git', ref = 'master', editable = true}
+nltk = "*"
+cython = "*"
+pycocotools = "*"
+
+
+[requires]
+python_version = "3.6"
