@@ -53,7 +53,7 @@ def test_preprocess_coco():
                             transforms=image_and_target_transform)
     classnames = {k: v['name'] for k, v in dataset.coco.cats.items()}
 
-    batch_size = 1
+    batch_size = 2
     data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
     for batch_i, (images, annotations) in enumerate(data_loader):
@@ -64,12 +64,15 @@ def test_preprocess_coco():
             for o_i in range(len(annotations)):
                 bbox_coordinates = annotations[o_i]['bbox']
 
-                x = bbox_coordinates[0].item()
-                y = bbox_coordinates[1].item()
-                w = bbox_coordinates[2].item()
-                h = bbox_coordinates[3].item()
-                box = [x, y, w, h, 1, 1, annotations[o_i]['category_id'].item(), 1]
+                x = bbox_coordinates[0][b_i]
+                y = bbox_coordinates[1][b_i]
+                w = bbox_coordinates[2][b_i]
+                h = bbox_coordinates[3][b_i]
+                category_id = annotations[o_i]['category_id'][b_i]
+                box = [x, y, w, h, 1, 1, category_id, 1]
                 boxes.append(box)
+
+            boxes = torch.tensor(boxes)
             plot_boxes(pil_image, boxes, classnames, True)
 
         if batch_i > 3:

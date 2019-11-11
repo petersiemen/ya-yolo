@@ -5,6 +5,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.transforms import ToPILImage
+from yolo.utils import plot_boxes
 
 from device import DEVICE
 from yolo.utils import boxes_iou
@@ -124,6 +125,8 @@ class YoloLoss():
 def training(model, dataset, num_epochs=1, batch_size=2):
     print('Number of car images: ', len(dataset))
 
+    classnames = {k: v['name'] for k, v in dataset.coco.cats.items()}
+
     lr = 0.001
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     grid_sizes = model.grid_sizes
@@ -142,19 +145,25 @@ def training(model, dataset, num_epochs=1, batch_size=2):
                                                                                              batch_size))
                 continue
 
-            pil_image = to_pil_image(images[0])
-            plt.imshow(pil_image)
-            plt.show()
+            boxes_for_batch = []
+            for b_i in range(batch_size):
 
-            number_of_annotated_objects = annotations[0]['bbox']
+                boxes_for_image = []
+                for o_i in range(len(annotations)):
+                    bbox_coordinates = annotations[o_i]['bbox']
 
-            x = annotations['bbox'][0].to(DEVICE)
-            y = annotations['bbox'][1].to(DEVICE)
-            w = annotations['bbox'][2].to(DEVICE)
-            h = annotations['bbox'][3].to(DEVICE)
+                    x = bbox_coordinates[0][b_i]
+                    y = bbox_coordinates[1][b_i]
+                    w = bbox_coordinates[2][b_i]
+                    h = bbox_coordinates[3][b_i]
+                    box = [x, y, w, h, 1, 1, annotations[o_i]['category_id'][b_i], 1]
+                    boxes_for_image.append(box)
 
-            ground_truth_boxes = torch.tensor(
-                [[x[i].item(), y[i].item(), w[i].item(), h[i].item()] for i in range(len(x))])
+                pil_image = to_pil_image(images[b_i])
+                plot_boxes(pil_image, boxes_for_image, classnames, True)
+                boxes_for_batch.append(boxes_for_image)
+
+            ground_truth_boxes = torch.tensor(boxes_for_batch)
 
             model.train()
             coordinates, class_scores, confidence = model(images)

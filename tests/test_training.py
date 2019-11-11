@@ -20,11 +20,16 @@ def test_training():
     model = Yolo(cfg_file=cfg_file, batch_size=batch_size)
     model.load_weights(weight_file)
 
-    transform = transforms.Compose([
-        Resize((416, 416)),
-        ToTensor()
+    image_and_target_transform = Compose([
+        SquashResize(416),
+        ConvertXandYToCenterOfBoundingBox(),
+        ScaleBboxRelativeToSize(416),
+        # PadToFit(255),
+        # RandomCrop(200),
+        # RandomHorizontalFlip(),,
+        CocoToTensor()
     ])
 
-    dataset = CocoDetection(root=COCO_IMAGES_DIR, annFile=COCO_ANNOTATIONS_FILE, transform=transform)
+    dataset = CocoDetection(root=COCO_IMAGES_DIR, annFile=COCO_ANNOTATIONS_FILE, transforms=image_and_target_transform)
 
     training(model=model, dataset=dataset, num_epochs=1, batch_size=batch_size)
