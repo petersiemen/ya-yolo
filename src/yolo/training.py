@@ -29,22 +29,34 @@ def get_indices_for_center_of_bounding_boxes(num_anchors, grid_widths, x, y):
             yield idx
 
 
-def _get_indices_for_center_of_ground_truth_bounding_boxes(x, y, grid_sizes):
-    for b_i in range(len(x)):
-        indices = list(get_indices_for_center_of_bounding_boxes(num_anchors=3,
-                                                                grid_widths=grid_sizes,
-                                                                x=x[b_i].item(),
-                                                                y=y[b_i].item()))
-        yield indices
+def _get_indices_for_center_of_ground_truth_bounding_boxes(ground_truth_boxes, grid_sizes):
+    indices_for_batch = []
+    for batch_i in range(ground_truth_boxes.shape[0]):
+        indices_for_image = []
+        for box_j in range(ground_truth_boxes.shape[1]):
+            x = ground_truth_boxes[batch_i, box_j, 0]
+            y = ground_truth_boxes[batch_i, box_j, 1]
+            indices = list(get_indices_for_center_of_bounding_boxes(num_anchors=3,
+                                                                    grid_widths=grid_sizes,
+                                                                    x=x,
+                                                                    y=y))
+            indices_for_image.append(indices)
+        indices_for_batch.append(indices_for_image)
+    return torch.tensor(indices_for_batch)
 
 
 def _get_indices_for_highest_iou_with_ground_truth_bounding_box(indices, ground_truth_boxes, coordinates):
-    for b_i in range(len(indices)):
-        candidate_coordinates = coordinates[b_i][indices[b_i]]
-        ious = [boxes_iou(ground_truth_boxes[b_i],
-                          candidate_box).item() for candidate_box in candidate_coordinates]
-        max_iou_idx = np.argmax(ious)
-        yield indices[b_i][max_iou_idx]
+    indices_for_batch = []
+    for batch_i in range(ground_truth_boxes.shape[0]):
+        indices_for_image = []
+        for box_j in range(ground_truth_boxes.shape[1]):
+            candidate_coordinates = coordinates[batch_i, indices[batch_i, box_j]]
+            ious = [boxes_iou(ground_truth_boxes[batch_i, box_j], candidate_box) for candidate_box in
+                    candidate_coordinates]
+            max_iou_idx = np.argmax(ious)
+            indices_for_image.append(indices[batch_i, box_j, max_iou_idx])
+        indices_for_batch.append(indices_for_image)
+    return torch.tensor(indices_for_batch)
 
 
 def _get_box_and_confidence_with_highest_iou_with_ground_truth_bounding_box(indices,
@@ -61,20 +73,37 @@ def _get_box_and_confidence_with_highest_iou_with_ground_truth_bounding_box(indi
 
 
 def _select_boxes(coordinates, indices):
-    for b_i in range(len(indices)):
-        yield coordinates[b_i][indices[b_i]]
+    batch_size = indices.shape[0]
+    boxes_per_image_in_batch = indices.shape[1]
+    boxes_for_batch = torch.zeros(batch_size, boxes_per_image_in_batch, 4).type_as(coordinates)
+    for image_i in range(batch_size):
+        for box_j in range(boxes_per_image_in_batch):
+            boxes_for_batch[image_i, box_j] = coordinates[image_i, indices[image_i, box_j]]
+
+    return boxes_for_batch
 
 
 def _select_confidence(confidence, indices):
-    for b_i in range(len(indices)):
-        yield confidence[b_i][indices[b_i]]
+    batch_size = indices.shape[0]
+    boxes_per_image_in_batch = indices.shape[1]
+    confidence_for_batch = torch.zeros(batch_size, boxes_per_image_in_batch, 1).type_as(confidence)
+    for image_i in range(batch_size):
+        for box_j in range(boxes_per_image_in_batch):
+            confidence_for_batch[image_i, box_j] = confidence[image_i, indices[image_i, box_j]]
+    return confidence_for_batch
 
 
 def _negative_select_confidence(confidence, indices):
-    for b_i in range(len(indices)):
-        skipped = indices[b_i]
-        idx = [i for i in range(len(confidence[b_i])) if i != skipped]
-        yield confidence[b_i][idx].unsqueeze(0)
+    batch_size = indices.shape[0]
+    boxes_per_image_in_batch = indices.shape[1]
+    number_of_gridcells = confidence.shape[1]
+    number_of_neg_confidences = number_of_gridcells - boxes_per_image_in_batch
+    neg_confidence_for_batch = torch.zeros(batch_size, number_of_neg_confidences).type_as(confidence)
+    for image_i in range(batch_size):
+        skipped = indices[image_i]
+        idx = [i for i in range(len(confidence[image_i])) if i not in skipped]
+        neg_confidence_for_batch[image_i] = confidence[image_i, idx]
+    return neg_confidence_for_batch
 
 
 class YoloLoss():
@@ -90,15 +119,15 @@ class YoloLoss():
                self._no_objectness_loss(no_object_confidence)
 
     def _localization_loss(self, detected, ground_truth_boxes):
-        x = ground_truth_boxes[:, 0]
-        y = ground_truth_boxes[:, 1]
-        w = ground_truth_boxes[:, 2]
-        h = ground_truth_boxes[:, 3]
+        x = ground_truth_boxes[:, :, 0]
+        y = ground_truth_boxes[:, :, 1]
+        w = ground_truth_boxes[:, :, 2]
+        h = ground_truth_boxes[:, :, 3]
 
-        _x = detected[:, 0]
-        _y = detected[:, 1]
-        _w = detected[:, 2]
-        _h = detected[:, 3]
+        _x = detected[:, :, 0].type_as(x)
+        _y = detected[:, :, 1].type_as(y)
+        _w = detected[:, :, 2].type_as(w)
+        _h = detected[:, :, 3].type_as(h)
 
         loss = self.lambda_coord * (self.mse(_x, x) + self.mse(_y, y)) + self.lambda_coord * (
                 self.mse(torch.sqrt(_h), torch.sqrt(h)) + self.mse(torch.sqrt(_w), torch.sqrt(w)))
@@ -122,8 +151,8 @@ class YoloLoss():
         return loss
 
 
-def training(model, dataset, num_epochs=1, batch_size=2):
-    print('Number of car images: ', len(dataset))
+def training(model, dataset, num_epochs=1, batch_size=2, limit=None):
+    print('Number of images: ', len(dataset))
 
     classnames = {k: v['name'] for k, v in dataset.coco.cats.items()}
 
@@ -168,23 +197,20 @@ def training(model, dataset, num_epochs=1, batch_size=2):
             model.train()
             coordinates, class_scores, confidence = model(images)
 
-            batch_indices = list(_get_indices_for_center_of_ground_truth_bounding_boxes(x, y, grid_sizes))
-            batch_indices_with_highest_iou = list(_get_indices_for_highest_iou_with_ground_truth_bounding_box(
+            batch_indices = _get_indices_for_center_of_ground_truth_bounding_boxes(ground_truth_boxes, grid_sizes)
+            batch_indices_with_highest_iou = _get_indices_for_highest_iou_with_ground_truth_bounding_box(
                 batch_indices, ground_truth_boxes, coordinates
-            ))
-            boxes_with_highest_iou = torch.cat(
-                [box.unsqueeze(0) for box in list(_select_boxes(coordinates, batch_indices_with_highest_iou))], 0)
-            confidence_with_highest_iou = torch.cat([conf.unsqueeze(0) for conf in torch.tensor(
-                list(_select_confidence(confidence, batch_indices_with_highest_iou)))], 0)
+            )
 
-            no_object_confidence = torch.cat(
-                list(_negative_select_confidence(confidence, batch_indices_with_highest_iou)), 0)
+            boxes_with_highest_iou = _select_boxes(coordinates, batch_indices_with_highest_iou)
+            confidence_with_highest_iou = _select_confidence(confidence, batch_indices_with_highest_iou)
+
+            no_object_confidence = _negative_select_confidence(confidence, batch_indices_with_highest_iou)
 
             loss = yolo_loss.loss(boxes_with_highest_iou,
                                   confidence_with_highest_iou,
                                   no_object_confidence,
-                                  ground_truth_boxes,
-                                  )
+                                  ground_truth_boxes)
 
             # zero the parameter (weight) gradients
             optimizer.zero_grad()
@@ -197,7 +223,25 @@ def training(model, dataset, num_epochs=1, batch_size=2):
             # to convert loss into a scalar and add it to the running_loss, use .item()
             running_loss += loss.item()
 
+            for image_i in range(batch_size):
+                pil_image = to_pil_image(images[image_i])
+                boxes = []
+                for box_j in range(boxes_with_highest_iou.shape[1]):
+                    box = boxes_with_highest_iou[image_i, box_j]
+                    boxes.append([
+                        box[0].item(),
+                        box[1].item(),
+                        box[2].item(),
+                        box[3].item(),
+                    ])
+
+                plot_boxes(pil_image, boxes, classnames, False)
+
             print('Epoch: {}, Batch: {}, Avg. Loss: {}'.format(epoch + 1, batch_i + 1, running_loss / 1000))
             if batch_i % 10 == 9:  # print every 10 batches
                 print('Epoch: {}, Batch: {}, Avg. Loss: {}'.format(epoch + 1, batch_i + 1, running_loss / 1000))
                 running_loss = 0.0
+
+            if limit is not None and batch_i >= limit:
+                print('Stop here after training {} batches (limit: {})'.format(batch_i, limit))
+                return

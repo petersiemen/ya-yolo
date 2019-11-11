@@ -32,4 +32,4 @@ def test_training():
 
     dataset = CocoDetection(root=COCO_IMAGES_DIR, annFile=COCO_ANNOTATIONS_FILE, transforms=image_and_target_transform)
 
-    training(model=model, dataset=dataset, num_epochs=1, batch_size=batch_size)
+    training(model=model, dataset=dataset, num_epochs=1, batch_size=batch_size, limit=10)
