@@ -145,8 +145,10 @@ class YoloLoss():
         _w = detected[:, :, 2].type_as(w)
         _h = detected[:, :, 3].type_as(h)
 
-        loss = self.lambda_coord * (self.mse(_x, x) + self.mse(_y, y)) + self.lambda_coord * (
-                self.mse(torch.sqrt(_h), torch.sqrt(h)) + self.mse(torch.sqrt(_w), torch.sqrt(w)))
+        loss = self.lambda_coord * (self.mse(input=_x, target=x)
+                                    + self.mse(input=_y, target=y)) + self.lambda_coord * (
+                       self.mse(input=torch.sqrt(_h), target=torch.sqrt(h))
+                       + self.mse(input=torch.sqrt(_w), target=torch.sqrt(w)))
 
         return loss
 
@@ -157,12 +159,14 @@ class YoloLoss():
         :return:
         """
 
-        loss = self.mse(confidence, torch.ones(confidence.shape).type_as(confidence).to(device=DEVICE))
+        loss = self.mse(input=confidence,
+                        target=torch.ones(confidence.shape).type_as(confidence).to(device=DEVICE))
         return loss
 
     def _no_objectness_loss(self, no_object_confidence):
-        loss = self.lambda_no_obj * self.mse(no_object_confidence,
-                                             torch.zeros(no_object_confidence.shape).type_as(no_object_confidence).to(
+        loss = self.lambda_no_obj * self.mse(input=no_object_confidence,
+                                             target=torch.zeros(no_object_confidence.shape).type_as(
+                                                 no_object_confidence).to(
                                                  device=DEVICE))
         return loss
 
@@ -178,7 +182,7 @@ class YoloLoss():
                     class_idx = int(ground_truth[b_i, o_i, 6].item())
                     ground_truth_class_scores[b_i, o_i, g_i, class_idx] = 1
 
-        return self.bce_with_logits_loss(class_scores, ground_truth_class_scores)
+        return self.bce_with_logits_loss(input=class_scores, target=ground_truth_class_scores)
 
 
 def plot(ground_truth_boxes, images, classnames, plot_labels):
@@ -205,7 +209,7 @@ def _to_plottable_boxes(boxes, batch_indices_with_highest_iou, class_scores):
     return boxes_for_batch
 
 
-def training(model, ya_yolo_dataset, num_epochs=1, limit=None, debug=False):
+def training(model, ya_yolo_dataset, num_epochs=1, limit=None, debug=False, print_every=10):
     print('Number of images: ', len(ya_yolo_dataset.dataset))
 
     lr = 0.001
@@ -217,7 +221,7 @@ def training(model, ya_yolo_dataset, num_epochs=1, limit=None, debug=False):
     batch_size = ya_yolo_dataset.batch_size
     classnames = ya_yolo_dataset.get_classnames()
 
-    for epoch in range(1, num_epochs + 1):
+    for epoch in range(num_epochs):
 
         running_loss = 0.0
 
@@ -270,7 +274,7 @@ def training(model, ya_yolo_dataset, num_epochs=1, limit=None, debug=False):
             # to convert loss into a scalar and add it to the running_loss, use .item()
             running_loss += loss.item()
 
-            if batch_i % 10 == 9:  # print every 10 batches
+            if batch_i % print_every == 0:  # print every print_every +1  batches
                 print('Epoch: {}, Batch: {}, Avg. Loss: {}'.format(epoch + 1, batch_i + 1, running_loss / 1000))
                 running_loss = 0.0
 
