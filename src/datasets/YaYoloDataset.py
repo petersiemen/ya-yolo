@@ -13,4 +13,4 @@ class YaYoloDataset():
         return DataLoader(self.dataset, batch_size=self.batch_size, shuffle=False)
 
     def get_classnames(self):
-        return {k: v['name'] for k, v in self.dataset.coco.cats.items()}
+        raise NotImplementedError("Subclasses should implement this!")

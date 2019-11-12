@@ -3,7 +3,6 @@ from torch.utils.data import DataLoader
 from torchvision.transforms.transforms import ToPILImage, RandomCrop, RandomHorizontalFlip, Resize, ToTensor
 from torchvision.transforms import transforms
 
-
 from .context import *
 
 HERE = os.path.dirname(os.path.realpath(__file__))
@@ -34,5 +33,4 @@ def test_training():
     dataset = CocoDetection(root=COCO_IMAGES_DIR, annFile=COCO_ANNOTATIONS_FILE, transforms=image_and_target_transform)
     ya_yolo_dataset = YoloCocoDataset(dataset=dataset, batch_size=batch_size)
 
-
-    training(model=model, ya_yolo_dataset=ya_yolo_dataset, num_epochs=1, limit=10)
+    training(model=model, ya_yolo_dataset=ya_yolo_dataset, num_epochs=1, limit=10, debug=True)

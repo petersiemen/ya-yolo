@@ -81,6 +81,7 @@ def _select_boxes(coordinates, indices):
             boxes_for_batch[image_i, box_j] = coordinates[image_i, indices[image_i, box_j]]
     return boxes_for_batch
 
+
 def _select_class_scores(class_scores, indices):
     batch_size = indices.shape[0]
     number_of_groundtruth_objects_per_image = indices.shape[1]
@@ -92,9 +93,8 @@ def _select_class_scores(class_scores, indices):
                                            number_of_classes).type_as(class_scores)
     for image_i in range(batch_size):
         for object_i in range(number_of_groundtruth_objects_per_image):
-            classes_scores_for_batch[image_i,object_i] = class_scores[image_i, indices[image_i, object_i]]
+            classes_scores_for_batch[image_i, object_i] = class_scores[image_i, indices[image_i, object_i]]
     return classes_scores_for_batch
-
 
 
 def _select_confidence(confidence, indices):
@@ -131,7 +131,8 @@ class YoloLoss():
     def loss(self, detected, confidence, no_object_confidence, class_scores, ground_truth):
         return self._localization_loss(detected, ground_truth) + \
                self._objectness_loss(confidence) + \
-               self._no_objectness_loss(no_object_confidence) + self._classification_loss(class_scores, ground_truth)
+               self._no_objectness_loss(no_object_confidence) + \
+               self._classification_loss(class_scores, ground_truth)
 
     def _localization_loss(self, detected, ground_truth_boxes):
         x = ground_truth_boxes[:, :, 0]
@@ -165,7 +166,6 @@ class YoloLoss():
                                                  device=DEVICE))
         return loss
 
-
     def _classification_loss(self, class_scores, ground_truth):
 
         ground_truth_class_scores = torch.zeros(class_scores.shape).type_as(class_scores)
@@ -178,13 +178,35 @@ class YoloLoss():
                     class_idx = int(ground_truth[b_i, o_i, 6].item())
                     ground_truth_class_scores[b_i, o_i, g_i, class_idx] = 1
 
-
         return self.bce_with_logits_loss(class_scores, ground_truth_class_scores)
 
-def training(model, ya_yolo_dataset, num_epochs=1,  limit=None):
+
+def plot(ground_truth_boxes, images, classnames, plot_labels):
+    batch_size = len(ground_truth_boxes)
+    for b_i in range(batch_size):
+        pil_image = to_pil_image(images[b_i])
+        boxes = ground_truth_boxes[b_i]
+
+        plot_boxes(pil_image, boxes, classnames, plot_labels)
+
+
+def _to_plottable_boxes(boxes, batch_indices_with_highest_iou, class_scores):
+    batch_size = boxes.shape[0]
+    objects_per_image = boxes.shape[1]
+    detached_boxes = boxes.detach().numpy().tolist()
+    boxes_for_batch = []
+    for b_i in range(batch_size):
+        boxes_for_image = []
+        for o_i in range(objects_per_image):
+            cls_max_conf, cls_max_id = torch.max(class_scores[b_i, batch_indices_with_highest_iou[b_i, o_i]], 0)
+
+            boxes_for_image.append(detached_boxes[b_i][o_i] + [1, cls_max_conf.item(), cls_max_id.item()])
+        boxes_for_batch.append(boxes_for_image)
+    return boxes_for_batch
+
+
+def training(model, ya_yolo_dataset, num_epochs=1, limit=None, debug=False):
     print('Number of images: ', len(ya_yolo_dataset.dataset))
-
-
 
     lr = 0.001
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -206,31 +228,15 @@ def training(model, ya_yolo_dataset, num_epochs=1,  limit=None):
                                                                                              batch_size))
                 continue
 
-            # boxes_for_batch = []
-            # for b_i in range(batch_size):
-            #     boxes_for_image = []
-            #     for o_i in range(len(annotations)):
-            #         bbox_coordinates = annotations[o_i]['bbox']
-            #
-            #         x = bbox_coordinates[0][b_i]
-            #         y = bbox_coordinates[1][b_i]
-            #         w = bbox_coordinates[2][b_i]
-            #         h = bbox_coordinates[3][b_i]
-            #         box = [x, y, w, h, 1, 1, annotations[o_i]['category_id'][b_i], 1]
-            #         boxes_for_image.append(box)
-            #
-            #     pil_image = to_pil_image(images[b_i])
-            #     plot_boxes(pil_image, boxes_for_image, classnames, True)
-            #     boxes_for_batch.append(boxes_for_image)
-            #
-            # ground_truth_boxes = torch.tensor(boxes_for_batch)
+            ground_truth_boxes = ya_yolo_dataset.get_ground_truth_boxes(annotations)
+            if debug:
+                plot(ground_truth_boxes, images, classnames, True)
 
             model.train()
             coordinates, class_scores, confidence = model(images)
 
-            ground_truth_boxes = ya_yolo_dataset.get_ground_truth_boxes(annotations)
-
-            batch_indices_of_ground_truth_boxes = _get_indices_for_center_of_ground_truth_bounding_boxes(ground_truth_boxes, grid_sizes)
+            batch_indices_of_ground_truth_boxes = _get_indices_for_center_of_ground_truth_bounding_boxes(
+                ground_truth_boxes, grid_sizes)
             batch_indices_with_highest_iou = _get_indices_for_highest_iou_with_ground_truth_bounding_box(
                 batch_indices_of_ground_truth_boxes, ground_truth_boxes, coordinates
             )
@@ -239,7 +245,13 @@ def training(model, ya_yolo_dataset, num_epochs=1,  limit=None):
             confidence_with_highest_iou = _select_confidence(confidence, batch_indices_with_highest_iou)
 
             no_object_confidence = _negative_select_confidence(confidence, batch_indices_with_highest_iou)
-            class_scores_for_ground_truth_boxes = _select_class_scores(class_scores, batch_indices_of_ground_truth_boxes)
+            class_scores_for_ground_truth_boxes = _select_class_scores(class_scores,
+                                                                       batch_indices_of_ground_truth_boxes)
+
+            if debug:
+                plot(_to_plottable_boxes(boxes_with_highest_iou,
+                                         batch_indices_with_highest_iou,
+                                         class_scores), images, classnames, True)
 
             loss = yolo_loss.loss(boxes_with_highest_iou,
                                   confidence_with_highest_iou,
@@ -258,21 +270,6 @@ def training(model, ya_yolo_dataset, num_epochs=1,  limit=None):
             # to convert loss into a scalar and add it to the running_loss, use .item()
             running_loss += loss.item()
 
-            for image_i in range(batch_size):
-                pil_image = to_pil_image(images[image_i])
-                boxes = []
-                for box_j in range(boxes_with_highest_iou.shape[1]):
-                    box = boxes_with_highest_iou[image_i, box_j]
-                    boxes.append([
-                        box[0].item(),
-                        box[1].item(),
-                        box[2].item(),
-                        box[3].item(),
-                    ])
-
-                plot_boxes(pil_image, boxes, classnames, False)
-
-            print('Epoch: {}, Batch: {}, Avg. Loss: {}'.format(epoch + 1, batch_i + 1, running_loss / 1000))
             if batch_i % 10 == 9:  # print every 10 batches
                 print('Epoch: {}, Batch: {}, Avg. Loss: {}'.format(epoch + 1, batch_i + 1, running_loss / 1000))
                 running_loss = 0.0
