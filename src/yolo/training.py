@@ -79,8 +79,18 @@ def _select_boxes(coordinates, indices):
     for image_i in range(batch_size):
         for box_j in range(boxes_per_image_in_batch):
             boxes_for_batch[image_i, box_j] = coordinates[image_i, indices[image_i, box_j]]
-
     return boxes_for_batch
+
+def _select_class_scores(class_score, indices):
+    batch_size = indices.shape[0]
+    boxes_per_image_in_batch = indices.shape[1]
+    classes_for_batch = torch.zeros(batch_size, boxes_per_image_in_batch, 1).type_as(class_score)
+    for image_i in range(batch_size):
+        for box_j in range(boxes_per_image_in_batch):
+            idx = torch.argmax(class_score[image_i, indices[image_i, box_j]])
+            classes_for_batch[image_i, box_j] = idx
+            print(indices)
+
 
 
 def _select_confidence(confidence, indices):
@@ -176,7 +186,6 @@ def training(model, dataset, num_epochs=1, batch_size=2, limit=None):
 
             boxes_for_batch = []
             for b_i in range(batch_size):
-
                 boxes_for_image = []
                 for o_i in range(len(annotations)):
                     bbox_coordinates = annotations[o_i]['bbox']
@@ -206,6 +215,7 @@ def training(model, dataset, num_epochs=1, batch_size=2, limit=None):
             confidence_with_highest_iou = _select_confidence(confidence, batch_indices_with_highest_iou)
 
             no_object_confidence = _negative_select_confidence(confidence, batch_indices_with_highest_iou)
+            class_scores_for_boxes_with_highest_iou = _select_class_scores(class_scores, batch_indices_with_highest_iou)
 
             loss = yolo_loss.loss(boxes_with_highest_iou,
                                   confidence_with_highest_iou,

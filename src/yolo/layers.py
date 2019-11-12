@@ -246,10 +246,15 @@ class EagerYoloLayer(nn.Module):
                                  ws.view(self.batch_size, self.num_anchors * self.height * self.width, 1),
                                  hs.view(self.batch_size, self.num_anchors * self.height * self.width, 1)), 2)
 
-        # TODO return values without applying softmax ... softmax should be applied to each syngroup separately
-        class_scores = torch.nn.Softmax(dim=1)(output[5:5 + self.num_classes].transpose(0, 1)) \
-                           .view(self.batch_size, self.num_anchors * self.height * self.width, self.num_classes) * \
-                       det_confs.view(self.batch_size, self.num_anchors * self.height * self.width, 1).repeat(1, 1,
-                                                                                                              self.num_classes)
+        # according to YOLOv3: An Incremental Improvement
+        #
+        # 2.2. Class Prediction
+        # Each box predicts the classes the bounding box may contain using multilabel classification. We do not use a softmax
+        # as we have found it is unnecessary for good performance, instead we simply use independent logistic classifiers.
+        # During training we use binary cross-entropy loss for the class predictions.
+        #
+        class_scores = torch.sigmoid(output[5:5 + self.num_classes].transpose(0, 1) \
+                                     .view(self.batch_size, self.num_anchors * self.height * self.width,
+                                           self.num_classes))
 
         return coordinates, class_scores, det_confs.view(self.batch_size, self.num_anchors * self.height * self.width)

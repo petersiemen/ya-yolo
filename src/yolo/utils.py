@@ -1,9 +1,7 @@
-import torch
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import torch.nn.functional as F
 
 
 def parse_cfg(cfg_file):
@@ -280,8 +278,9 @@ def nms_for_coordinates_and_class_scores_and_confidence(coordinates,
         box_i = coordinates[sortIds[i]].detach().numpy().tolist()
         det_conf = confidence[sortIds[i]].detach().item()
         class_id = cls_max_ids[sortIds[i]].detach().item()
+        class_cnf = cls_max_confs[sortIds[i]].detach().item()
         box_i.append(det_conf)
-        box_i.append(det_conf)
+        box_i.append(class_cnf)
         box_i.append(class_id)
         box_i.append(sortIds[i].detach().item())
 
