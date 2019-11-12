@@ -1,7 +1,4 @@
 from torchvision.datasets import CocoDetection
-from torch.utils.data import DataLoader
-from torchvision.transforms.transforms import ToPILImage, RandomCrop, RandomHorizontalFlip, Resize, ToTensor
-from torchvision.transforms import transforms
 
 from .context import *
 
@@ -15,8 +12,6 @@ def test_training():
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
 
     batch_size = 2
-    # Load the COCO object classes
-    # class_names = load_class_names(namesfile)
     model = Yolo(cfg_file=cfg_file, batch_size=batch_size)
     model.load_weights(weight_file)
 
