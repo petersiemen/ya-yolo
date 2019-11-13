@@ -25,7 +25,11 @@ This goal of this implementation is:
     cd ~/ya-yolo
     pip install
     ```  
-
+4. Download the original weight parameters used in YOLOv3
+    ```shell script
+    cd ~/ya-yolo/cfg
+    ./get_weights.sh
+    ```
 
 
 ### How to use ya-yolo as a pip dependency in your project
