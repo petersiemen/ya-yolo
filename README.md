@@ -2,14 +2,15 @@
 Yet Another YOLOv3 Implementation in PyTorch
 
 There might already be too many implementations of [YOLOv3: An Incremental Improvement](https://arxiv.org/abs/1804.02767) 
-on github but unfortunately none of them has it all. Either they are incomplete, buggy or it remains just a big hassle to 
-re-train them on custom datasets and finally to convert them to coreml.
+on github but unfortunately none of them has it all. Either they are incomplete, buggy, 
+not out of the box convertible to coreml or even onnx, or it remains just a big hassle to 
+re-train them on custom datasets.
  
 This goal of this implementation is:
 * to provide an accurate implementation of the original YOLOv3 paper in PyTorch
 * to make it easy to plug in custom datasets and re-train with adjustable loss functions
 * to provide code to train and test these custom models  
-* to keep the PyTorch model convertible via [onnx](https://onnx.ai/) to [coreml](https://developer.apple.com/documentation/coreml)
+* to keep the PyTorch model convertible to [coreml](https://developer.apple.com/documentation/coreml) via [onnx](https://onnx.ai/)
 
 
 ### How to develop ya-yolo
