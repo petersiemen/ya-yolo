@@ -212,6 +212,8 @@ def _to_plottable_boxes(boxes, batch_indices_with_highest_iou, class_scores):
 def training(model, ya_yolo_dataset, model_dir, num_epochs=1, lr=0.001, limit=None, debug=False, print_every=10):
     print('Number of images: ', len(ya_yolo_dataset.dataset))
 
+    model.to(DEVICE)
+
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     grid_sizes = model.grid_sizes
     yolo_loss = YoloLoss()
@@ -231,7 +233,7 @@ def training(model, ya_yolo_dataset, model_dir, num_epochs=1, lr=0.001, limit=No
                                                                                              batch_size))
                 continue
 
-            ground_truth_boxes = ya_yolo_dataset.get_ground_truth_boxes(annotations)
+            ground_truth_boxes = ya_yolo_dataset.get_ground_truth_boxes(annotations).to(DEVICE)
             if debug:
                 plot(ground_truth_boxes, images, classnames, True)
 
