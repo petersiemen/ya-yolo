@@ -31,6 +31,15 @@ This goal of this implementation is:
     ./get_weights.sh
     ```
 
+### How to run jupyter notebooks on an ec2 instance
+1. ssh into your ec2 instance
+2. Follow the steps from 'How to develop ya-yolo'
+3. Generate config for jupyter and run notebook
+    ```shell script
+    jupyter notebook --generate-config    
+    jupyter notebook --ip=0.0.0.0 --no-browser    
+    ```
+
 
 ### How to use ya-yolo as a pip dependency in your project
 
