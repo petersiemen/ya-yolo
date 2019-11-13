@@ -209,7 +209,7 @@ def _to_plottable_boxes(boxes, batch_indices_with_highest_iou, class_scores):
     return boxes_for_batch
 
 
-def training(model, ya_yolo_dataset, num_epochs=1, lr=0.001, limit=None, debug=False, print_every=10):
+def training(model, ya_yolo_dataset, model_dir, num_epochs=1, lr=0.001, limit=None, debug=False, print_every=10):
     print('Number of images: ', len(ya_yolo_dataset.dataset))
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -220,7 +220,7 @@ def training(model, ya_yolo_dataset, num_epochs=1, lr=0.001, limit=None, debug=F
     batch_size = ya_yolo_dataset.batch_size
     classnames = ya_yolo_dataset.get_classnames()
 
-    for epoch in range(num_epochs):
+    for epoch in range(1, num_epochs + 1):
 
         running_loss = 0.0
 
@@ -274,9 +274,12 @@ def training(model, ya_yolo_dataset, num_epochs=1, lr=0.001, limit=None, debug=F
             running_loss += loss.item()
 
             if batch_i % print_every == 0:  # print every print_every +1  batches
-                print('Epoch: {}, Batch: {}, Avg. Loss: {}'.format(epoch + 1, batch_i + 1, running_loss / 1000))
+                print('Epoch: {}, Batch: {}, Avg. Loss: {}'.format(epoch, batch_i + 1, running_loss / 1000))
                 running_loss = 0.0
 
             if limit is not None and batch_i >= limit:
                 print('Stop here after training {} batches (limit: {})'.format(batch_i, limit))
                 return
+
+        model.save(model_dir,
+                   'yolo__num_classes_{}__epoch_{}.pt'.format(model.num_classes, epoch))

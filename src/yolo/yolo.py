@@ -1,5 +1,6 @@
 import numpy as np
 
+import os
 from yolo.layers import *
 from yolo.utils import load_conv, load_conv_bn
 from yolo.yolo_builder import YoloBuilder
@@ -10,6 +11,19 @@ class Yolo(nn.Module):
         super(Yolo, self).__init__()
         self.models, self.grid_sizes = YoloBuilder.run(cfg_file, batch_size)
         self.output_tensor_length = self.get_output_tensor_length()
+
+        # TODO move this somewhere else when you write the code to customize the model to
+        # an arbitrary number of classes
+        tmp = set([
+            model.num_classes for model in self.models if isinstance(model, EagerYoloLayer)])
+        assert len(tmp) == 1
+        self.num_classes = tmp.pop()
+
+    def save(self, dir, name):
+        torch.save(self.state_dict(), os.path.join(dir, name))
+
+    def reload(self, dir, name):
+        self.load_state_dict(torch.load(os.path.join(dir, name)))
 
     def get_output_tensor_length(self):
         return np.sum([

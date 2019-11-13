@@ -8,7 +8,7 @@ setuptools.setup(
     version="0.0.1",
     author="Peter Siemen",
     author_email="mail@petersiemen.net",
-    description="Pytorch Yolo v3 Implementation that can be converted to coreml via onnx",
+    description="PyTorch YOLOv3 Implementation that can be converted to coreml via onnx",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/petersiemen/ya-yolo",
