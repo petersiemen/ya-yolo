@@ -188,8 +188,8 @@ class YoloLoss():
 def plot(ground_truth_boxes, images, classnames, plot_labels):
     batch_size = len(ground_truth_boxes)
     for b_i in range(batch_size):
-        pil_image = to_pil_image(images[b_i])
-        boxes = ground_truth_boxes[b_i]
+        pil_image = to_pil_image(images[b_i].cpu())
+        boxes = ground_truth_boxes[b_i].cpu()
 
         plot_boxes(pil_image, boxes, classnames, plot_labels)
 
