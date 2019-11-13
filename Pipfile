@@ -14,7 +14,7 @@ numpy = "*"
 pillow = "*"
 tqdm = "*"
 #onnx-coreml = "*"
-onnx-coreml = {git = 'https://github.com/onnx/onnx-coreml.git', ref ='master', editable= true}
+onnx-coreml = {git = 'https://github.com/onnx/onnx-coreml.git', ref = 'master', editable = true}
 #onnxmltools = "*"
 onnxmltools = {git = 'https://github.com/onnx/onnx-coreml.git', ref = 'master',editable = true}
 netron = "*"
