@@ -197,7 +197,7 @@ def plot(ground_truth_boxes, images, classnames, plot_labels):
 def _to_plottable_boxes(boxes, batch_indices_with_highest_iou, class_scores):
     batch_size = boxes.shape[0]
     objects_per_image = boxes.shape[1]
-    detached_boxes = boxes.detach().numpy().tolist()
+    detached_boxes = boxes.detach().cpu().numpy().tolist()
     boxes_for_batch = []
     for b_i in range(batch_size):
         boxes_for_image = []
