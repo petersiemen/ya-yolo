@@ -209,10 +209,9 @@ def _to_plottable_boxes(boxes, batch_indices_with_highest_iou, class_scores):
     return boxes_for_batch
 
 
-def training(model, ya_yolo_dataset, num_epochs=1, limit=None, debug=False, print_every=10):
+def training(model, ya_yolo_dataset, num_epochs=1, lr=0.001, limit=None, debug=False, print_every=10):
     print('Number of images: ', len(ya_yolo_dataset.dataset))
 
-    lr = 0.001
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     grid_sizes = model.grid_sizes
     yolo_loss = YoloLoss()
