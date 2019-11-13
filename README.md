@@ -2,7 +2,7 @@
 Yet Another YOLOv3 Implementation in PyTorch
 
 There might already be too many implementations of [YOLOv3: An Incremental Improvement](https://arxiv.org/abs/1804.02767) 
-on github. Unfortunately, none of them has it all. Either they are incomplete, buggy or it remains just a big hassle to 
+on github but unfortunately none of them has it all. Either they are incomplete, buggy or it remains just a big hassle to 
 re-train them on custom datasets and finally to convert them to coreml.
  
 This goal of this implementation is:
