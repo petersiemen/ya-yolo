@@ -235,7 +235,7 @@ def training(model, ya_yolo_dataset, model_dir, num_epochs=1, lr=0.001, limit=No
 
             ground_truth_boxes = ya_yolo_dataset.get_ground_truth_boxes(annotations).to(DEVICE)
             if debug:
-                plot(ground_truth_boxes, images, classnames, True)
+                plot(ground_truth_boxes.cpu(), images, classnames, True)
 
             model.train()
             coordinates, class_scores, confidence = model(images)
