@@ -99,25 +99,24 @@ def _select_class_scores(class_scores, indices):
 
 def _select_confidence(confidence, indices):
     batch_size = indices.shape[0]
-    boxes_per_image_in_batch = indices.shape[1]
-    confidence_for_batch = torch.zeros(batch_size, boxes_per_image_in_batch, 1).type_as(confidence)
+    objects_per_image_in_batch = indices.shape[1]
+    confidence_for_batch = torch.zeros(batch_size, objects_per_image_in_batch, 1).type_as(confidence)
     for image_i in range(batch_size):
-        for box_j in range(boxes_per_image_in_batch):
+        for box_j in range(objects_per_image_in_batch):
             confidence_for_batch[image_i, box_j] = confidence[image_i, indices[image_i, box_j]]
     return confidence_for_batch
 
 
-def _negative_select_confidence(confidence, indices):
+def _negative_select_confidences(confidence, indices):
     batch_size = indices.shape[0]
     boxes_per_image_in_batch = indices.shape[1]
     number_of_gridcells = confidence.shape[1]
-    number_of_neg_confidences = number_of_gridcells - boxes_per_image_in_batch
-    neg_confidence_for_batch = torch.zeros(batch_size, number_of_neg_confidences).type_as(confidence)
+    neg_confidences = []
     for image_i in range(batch_size):
         skipped = indices[image_i]
         idx = [i for i in range(len(confidence[image_i])) if i not in skipped]
-        neg_confidence_for_batch[image_i] = confidence[image_i, idx]
-    return neg_confidence_for_batch
+        neg_confidences.append(confidence[image_i, idx])
+    return neg_confidences
 
 
 class YoloLoss():
@@ -128,10 +127,10 @@ class YoloLoss():
         self.lambda_coord = lambda_coord
         self.lambda_no_obj = lambda_no_obj
 
-    def loss(self, detected, confidence, no_object_confidence, class_scores, ground_truth):
+    def loss(self, detected, confidence, no_object_confidences, class_scores, ground_truth):
         return self._localization_loss(detected, ground_truth) + \
                self._objectness_loss(confidence) + \
-               self._no_objectness_loss(no_object_confidence) + \
+               self._no_objectness_loss(no_object_confidences) + \
                self._classification_loss(class_scores, ground_truth)
 
     def _localization_loss(self, detected, ground_truth_boxes):
@@ -163,11 +162,13 @@ class YoloLoss():
                         target=torch.ones(confidence.shape).type_as(confidence).to(device=DEVICE))
         return loss
 
-    def _no_objectness_loss(self, no_object_confidence):
-        loss = self.lambda_no_obj * self.mse(input=no_object_confidence,
-                                             target=torch.zeros(no_object_confidence.shape).type_as(
-                                                 no_object_confidence).to(
-                                                 device=DEVICE))
+    def _no_objectness_loss(self, no_object_confidences):
+        loss = 0.0
+        for no_object_confidence in no_object_confidences:
+            loss += self.lambda_no_obj * self.mse(input=no_object_confidence,
+                                                  target=torch.zeros(no_object_confidence.shape).type_as(
+                                                      no_object_confidence).to(
+                                                      device=DEVICE))
         return loss
 
     def _classification_loss(self, class_scores, ground_truth):
@@ -227,21 +228,25 @@ def training(model, ya_yolo_dataset, model_dir, num_epochs=1, lr=0.001, limit=No
         running_loss = 0.0
 
         for batch_i, (images, annotations) in enumerate(data_loader):
+
             images = images.to(DEVICE)
             if images.shape[0] != batch_size:
-                print('Skipping batch {} because batch-size {} is not as expected {}'.format(batch_i, len(images),
+                print('Skipping batch {} because batch-size {} is not as expected {}'.format(batch_i + 1, len(images),
                                                                                              batch_size))
                 continue
 
             ground_truth_boxes = ya_yolo_dataset.get_ground_truth_boxes(annotations).to(DEVICE)
+            batch_indices_of_ground_truth_boxes = _get_indices_for_center_of_ground_truth_bounding_boxes(
+                ground_truth_boxes, grid_sizes)
+
             if debug:
+                print('processing batch {} with {} annotated objects per image ...'.format(batch_i + 1,
+                                                                                           ground_truth_boxes.shape[1]))
                 plot(ground_truth_boxes.cpu(), images, classnames, True)
 
             model.train()
             coordinates, class_scores, confidence = model(images)
 
-            batch_indices_of_ground_truth_boxes = _get_indices_for_center_of_ground_truth_bounding_boxes(
-                ground_truth_boxes, grid_sizes)
             batch_indices_with_highest_iou = _get_indices_for_highest_iou_with_ground_truth_bounding_box(
                 batch_indices_of_ground_truth_boxes, ground_truth_boxes, coordinates
             )
@@ -249,7 +254,7 @@ def training(model, ya_yolo_dataset, model_dir, num_epochs=1, lr=0.001, limit=No
             boxes_with_highest_iou = _select_boxes(coordinates, batch_indices_with_highest_iou)
             confidence_with_highest_iou = _select_confidence(confidence, batch_indices_with_highest_iou)
 
-            no_object_confidence = _negative_select_confidence(confidence, batch_indices_with_highest_iou)
+            no_object_confidences = _negative_select_confidences(confidence, batch_indices_with_highest_iou)
             class_scores_for_ground_truth_boxes = _select_class_scores(class_scores,
                                                                        batch_indices_of_ground_truth_boxes)
 
@@ -260,7 +265,7 @@ def training(model, ya_yolo_dataset, model_dir, num_epochs=1, lr=0.001, limit=No
 
             loss = yolo_loss.loss(boxes_with_highest_iou,
                                   confidence_with_highest_iou,
-                                  no_object_confidence,
+                                  no_object_confidences,
                                   class_scores_for_ground_truth_boxes,
                                   ground_truth_boxes)
 
@@ -279,7 +284,7 @@ def training(model, ya_yolo_dataset, model_dir, num_epochs=1, lr=0.001, limit=No
                 print('Epoch: {}, Batch: {}, Avg. Loss: {}'.format(epoch, batch_i + 1, running_loss / 1000))
                 running_loss = 0.0
 
-            if limit is not None and batch_i >= limit:
+            if limit is not None and batch_i + 1 >= limit:
                 print('Stop here after training {} batches (limit: {})'.format(batch_i, limit))
                 return
 
