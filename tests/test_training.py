@@ -14,6 +14,9 @@ def test_get_indices_for_center_of_ground_truth_bounding_boxes__for_no_annotatio
     assert indices.shape == (2, 0)
 
 
+
+
+
 def test_training():
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')

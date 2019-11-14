@@ -57,19 +57,6 @@ def get_indices_for_highest_iou_with_ground_truth_bounding_box(indices, ground_t
     return torch.tensor(indices_for_batch)
 
 
-def _get_box_and_confidence_with_highest_iou_with_ground_truth_bounding_box(indices,
-                                                                            ground_truth_boxes,
-                                                                            coordinates,
-                                                                            confidence):
-    for b_i in range(len(indices)):
-        candidate_coordinates = coordinates[b_i][indices[b_i]]
-        candidate_confidences = confidence[b_i][indices[b_i]]
-        ious = [boxes_iou(ground_truth_boxes[b_i],
-                          candidate_box).item() for candidate_box in candidate_coordinates]
-        max_iou_idx = np.argmax(ious)
-        yield candidate_coordinates[max_iou_idx], candidate_confidences[max_iou_idx]
-
-
 def select_boxes(coordinates, indices):
     batch_size = indices.shape[0]
     boxes_per_image_in_batch = indices.shape[1]

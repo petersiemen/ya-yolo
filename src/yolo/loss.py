@@ -19,7 +19,7 @@ class YoloLoss():
 
     def _localization_loss(self, detected, ground_truth_boxes):
 
-        if ground_truth_boxes.shape[2] == 4 and detected.shape[2] == 4:
+        if ground_truth_boxes.shape[2] == 8 and detected.shape[2] == 4:
             x = ground_truth_boxes[:, :, 0]
             y = ground_truth_boxes[:, :, 1]
             w = ground_truth_boxes[:, :, 2]
@@ -44,7 +44,7 @@ class YoloLoss():
         When there is an object, we want the score equals to IOU, and when there is no object we want the score to be zero.
         :return:
         """
-        if confidence.shape[2] > 0:
+        if confidence.shape[1] > 0 and confidence.shape[2] > 0:
             loss = self.mse(input=confidence,
                             target=torch.ones(confidence.shape).type_as(confidence).to(device=DEVICE))
             return loss
