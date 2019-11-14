@@ -7,6 +7,13 @@ COCO_IMAGES_DIR = os.path.join(HERE, '../../../datasets/coco-small/cocoapi/image
 COCO_ANNOTATIONS_FILE = os.path.join(COCO_IMAGES_DIR, '../../annotations/instances_train2014_10_per_category.json')
 
 
+def test_get_indices_for_center_of_ground_truth_bounding_boxes__for_no_annotations():
+    ground_truth_boxes = torch.tensor([[],[]])
+    grid_sizes = [13, 26, 52]
+    indices = get_indices_for_center_of_ground_truth_bounding_boxes(ground_truth_boxes, grid_sizes)
+    assert indices.shape == (2, 0)
+
+
 def test_training():
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')

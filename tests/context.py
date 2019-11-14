@@ -12,6 +12,7 @@ from yolo.yolo import *
 from yolo.utils import *
 from yolo.detect import *
 from yolo.training import *
+from yolo.loss import *
 from yolo.layers import *
 from yolo.yolo_builder import *
 from yolo.helpers import *
