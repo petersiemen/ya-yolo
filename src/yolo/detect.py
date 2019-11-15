@@ -1,9 +1,9 @@
 import time
 
-from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.transforms import ToPILImage
 from tqdm import tqdm
+from torch.utils.data import DataLoader
 
 from device import DEVICE
 from logging_config import *
@@ -16,36 +16,38 @@ to_pil_image = transforms.Compose([
 ])
 
 
-def detect(model,
-           dataset,
-           class_names,
-           limit=None,
-           batch_size=2,
-           skip=None,
-           plot=False,
-           iou_thresh=0.4,
-           objectness_thresh=0.9):
+def detect_cars(model,
+                ya_yolo_dataset,
+                class_names,
+                car_dataset_writer,
+                limit=None,
+                batch_size=2,
+                skip=None,
+                plot=False,
+                iou_thresh=0.5,
+                objectness_thresh=0.9,
+                ):
     logging.info(
-        'start dectecting objects in {} images. Using iou_thresh {} and objectness_thresh {}'.format(len(dataset),
-                                                                                                     iou_thresh,
-                                                                                                     objectness_thresh))
+        'start object detection run. Using iou_thresh {} and objectness_thresh {}'.format(
+            iou_thresh,
+            objectness_thresh))
 
-    data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+    data_loader = DataLoader(ya_yolo_dataset, batch_size=ya_yolo_dataset.batch_size, shuffle=False)
 
     cnt = 0
     detected = 0
-    total = len(dataset)
+    total = len(ya_yolo_dataset)
     if limit is not None:
         total = limit
 
     try:
-        for batch_i, batch in tqdm(enumerate(data_loader), total=total / batch_size):
+        for batch_i, (images, annotations, image_paths) in tqdm(enumerate(data_loader), total=total / batch_size):
             cnt += batch_size
             if skip is not None and skip > cnt:
                 logger.info('Skipping batch of {}. (skip: {}, cnt: {})'.format(batch_size, skip, cnt))
                 continue
 
-            images = batch['image'].to(DEVICE)
+            images = images.to(DEVICE)
             logger.info('Start detection on batch {} of {} images...'.format(batch_i, len(images)))
 
             before = time.time()
@@ -62,13 +64,24 @@ def detect(model,
                 if plot:
                     plot_boxes(pil_image, boxes, class_names, True)
 
+                if len(boxes) == 1 and boxes[0][6] == 2:
+                    image_path = image_paths[b_i]
+                    bb = boxes[0]
+                    bounding_box = {
+                        'x': bb[0], 'y': bb[1], 'w': bb[2], 'h': bb[3]
+                    }
+
+                    car_dataset_writer.append(image_path=image_path, make=annotations[0]['make'][b_i],
+                                              model=annotations[0]['model'][b_i],
+                                              bounding_box=bounding_box)
+                    detected += 1
+
                 elif len(boxes) > 0:
                     logger.warning('Found too many objects () on image. Discarding '.format(len(boxes),
-                                                                                            batch['image_path'][
-                                                                                                b_i]))
+                                                                                            image_paths[b_i]))
                 else:
-                    logger.warning('Found no car on image. Discarding {}'.format(
-                        batch['image_path'][b_i]))
+                    logger.warning('Found no object on image. Discarding {}'.format(
+                        image_paths[b_i]))
 
             logger.info('Detected {} in {} images '.format(detected, cnt))
             if limit is not None:
@@ -78,22 +91,9 @@ def detect(model,
                             limit, cnt))
                     return cnt
             del images
-            del batch
 
     except Exception as ex:
         logger.error(ex)
         return cnt
 
     return cnt
-
-
-def print_cuda_stats():
-    from torch.cuda import memory_allocated, max_memory_allocated, memory_cached, max_memory_cached
-
-    logger.info(
-        '\nmemory_allocated: {:.2f}, \nmax_memory_allocated: {:.2f}, \nmemory_cached: {:.2f}, \nmax_memory_cached: {:.2f}'.format(
-            memory_allocated() / 1024. / 1024.,
-            max_memory_allocated() / 1024. / 1024.,
-            memory_cached() / 1024. / 1024.,
-            max_memory_cached() / 1024. / 1024.,
-        ))

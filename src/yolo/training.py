@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from torchvision import transforms
 from torchvision.transforms import ToPILImage
+from torch.utils.data import DataLoader
 
 from device import DEVICE
 from yolo.loss import YoloLoss
@@ -127,7 +128,7 @@ def _to_plottable_boxes(boxes, batch_indices_with_highest_iou, class_scores):
 
 
 def training(model, ya_yolo_dataset, model_dir, num_epochs=1, lr=0.001, limit=None, debug=False, print_every=10):
-    print('Number of images: ', len(ya_yolo_dataset.dataset))
+    print('Number of images: ', len(ya_yolo_dataset))
 
     model.to(DEVICE)
 
@@ -135,7 +136,7 @@ def training(model, ya_yolo_dataset, model_dir, num_epochs=1, lr=0.001, limit=No
     grid_sizes = model.grid_sizes
     yolo_loss = YoloLoss()
 
-    data_loader = ya_yolo_dataset.get_dataloader()
+    data_loader = DataLoader(ya_yolo_dataset, batch_size=ya_yolo_dataset.batch_size, shuffle=False)
     batch_size = ya_yolo_dataset.batch_size
     classnames = ya_yolo_dataset.get_classnames()
 

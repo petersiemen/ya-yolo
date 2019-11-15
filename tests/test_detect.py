@@ -3,33 +3,37 @@ from .context import *
 HERE = os.path.dirname(os.path.realpath(__file__))
 
 
-def test_forward_yolo():
-    image_and_target_transform = Compose([
-        SquashResize(416),
-        CocoToTensor()
-    ])
-
-    to_pil_image = transforms.Compose([
-        ToPILImage()
-    ])
-
+def test_detect_with_batches():
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
     namesfile = os.path.join(HERE, '../cfg/coco.names')
     class_names = load_class_names(namesfile)
-    yolo = Yolo(cfg_file=cfg_file, batch_size=1)
-    yolo.load_weights(weight_file)
+    batch_size = 2
+    with torch.no_grad():
+        model = Yolo(cfg_file=cfg_file, batch_size=batch_size)
+        print()
 
-    image = load_image_file(os.path.join(HERE, './images/car.jpg'))
-    images,_  = image_and_target_transform(image, {})
-    images = images.unsqueeze(0)
+        model.load_weights(weight_file)
 
-    coordinates, class_score, confidence = yolo(images)
-    for b_i in range(coordinates.size(0)):
-        boxes = nms_for_coordinates_and_class_scores_and_confidence(coordinates[b_i],
-                                                                    class_score[b_i],
-                                                                    confidence[b_i],
-                                                                    0.6, 0.9)
-        print(boxes)
-        pil_image = to_pil_image(images[0])
-        plot_boxes(pil_image, boxes, class_names, True)
+        image_and_target_transform = Compose([
+            SquashResize(416),
+            CocoToTensor()
+        ])
+
+        dataset = SimpleCarDataset(root_dir='/home/peter/datasets/simple_cars/2019-08-23T10-22-54',
+                                   transforms=image_and_target_transform, batch_size=2)
+
+        to_file = os.path.join(HERE, 'output/cars.json')
+        if os.path.exists(to_file):
+            os.remove(to_file)
+
+        with FileWriter(file_path=to_file) as file_writer:
+            car_dataset_writer = DetectedSimpleCarDatasetWriter(file_writer)
+
+            detect_cars(model=model,
+                        ya_yolo_dataset=dataset,
+                        class_names=class_names,
+                        car_dataset_writer=car_dataset_writer,
+                        limit=10,
+                        batch_size=batch_size,
+                        plot=True)

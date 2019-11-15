@@ -45,10 +45,11 @@ class SquashResize(object):
         image = img.resize((self.size, self.size))
 
         for i in range(len(target)):
-            target[i]['bbox'][0] = target[i]['bbox'][0] / orig_width * self.size  # upper left corner
-            target[i]['bbox'][1] = target[i]['bbox'][1] / orig_height * self.size  # upper left corner
-            target[i]['bbox'][2] = target[i]['bbox'][2] / orig_width * self.size  # width
-            target[i]['bbox'][3] = target[i]['bbox'][3] / orig_height * self.size
+            if 'bbox' in target[i]:
+                target[i]['bbox'][0] = target[i]['bbox'][0] / orig_width * self.size  # upper left corner
+                target[i]['bbox'][1] = target[i]['bbox'][1] / orig_height * self.size  # upper left corner
+                target[i]['bbox'][2] = target[i]['bbox'][2] / orig_width * self.size  # width
+                target[i]['bbox'][3] = target[i]['bbox'][3] / orig_height * self.size
 
         return image, target
 

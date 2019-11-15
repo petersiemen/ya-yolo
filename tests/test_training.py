@@ -8,13 +8,10 @@ COCO_ANNOTATIONS_FILE = os.path.join(COCO_IMAGES_DIR, '../../annotations/instanc
 
 
 def test_get_indices_for_center_of_ground_truth_bounding_boxes__for_no_annotations():
-    ground_truth_boxes = torch.tensor([[],[]])
+    ground_truth_boxes = torch.tensor([[], []])
     grid_sizes = [13, 26, 52]
     indices = get_indices_for_center_of_ground_truth_bounding_boxes(ground_truth_boxes, grid_sizes)
     assert indices.shape == (2, 0)
-
-
-
 
 
 def test_training():
@@ -22,7 +19,7 @@ def test_training():
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
     model_dir = os.path.join(HERE, 'models')
 
-    batch_size = 2
+    batch_size = 3
     model = Yolo(cfg_file=cfg_file, batch_size=batch_size)
     model.load_weights(weight_file)
 
@@ -36,8 +33,9 @@ def test_training():
         CocoToTensor()
     ])
 
-    dataset = CocoDetection(root=COCO_IMAGES_DIR, annFile=COCO_ANNOTATIONS_FILE, transforms=image_and_target_transform)
-    ya_yolo_dataset = YoloCocoDataset(dataset=dataset, batch_size=batch_size)
+    ya_yolo_dataset = YaYoloCocoDataset(images_dir=COCO_IMAGES_DIR, annotations_file=COCO_ANNOTATIONS_FILE,
+                                        transforms=image_and_target_transform,
+                                        batch_size=batch_size)
 
     training(model=model, ya_yolo_dataset=ya_yolo_dataset, model_dir=model_dir, num_epochs=1, lr=0.001, limit=3,
              debug=True)
@@ -62,7 +60,7 @@ def test_training_without_annotations():
         CocoToTensor()
     ])
 
-    class TestYoloCocoDataset(YoloCocoDataset):
+    class TestYoloCocoDataset(YaYoloCocoDataset):
         def get_ground_truth_boxes(self, annotations):
             boxes_for_batch = []
             for b_i in range(self.batch_size):
@@ -71,9 +69,9 @@ def test_training_without_annotations():
             ground_truth_boxes = torch.tensor(boxes_for_batch)
             return ground_truth_boxes
 
-
-    dataset = CocoDetection(root=COCO_IMAGES_DIR, annFile=COCO_ANNOTATIONS_FILE, transforms=image_and_target_transform)
-    ya_yolo_dataset = TestYoloCocoDataset(dataset=dataset, batch_size=batch_size)
+    ya_yolo_dataset = TestYoloCocoDataset(images_dir=COCO_IMAGES_DIR, annotations_file=COCO_ANNOTATIONS_FILE,
+                                          transforms=image_and_target_transform,
+                                          batch_size=batch_size)
 
     training(model=model, ya_yolo_dataset=ya_yolo_dataset, model_dir=model_dir, num_epochs=1, lr=0.001, limit=3,
              debug=True)

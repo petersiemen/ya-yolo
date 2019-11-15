@@ -1,16 +1,27 @@
 import os
+
 import torch
+from torchvision.datasets import CocoDetection
+
 from datasets.YaYoloDataset import YaYoloDataset
-from yolo.utils import load_class_names
 
 HERE = os.path.dirname(os.path.realpath(__file__))
 
 
-class YoloCustomDataset(YaYoloDataset):
+class YaYoloCocoDataset(YaYoloDataset, CocoDetection):
 
-    def __init__(self, dataset, batch_size):
-        super(YoloCustomDataset, self).__init__(dataset, batch_size)
+    def __init__(self, images_dir, annotations_file, transforms, batch_size):
+        CocoDetection.__init__(self, root=images_dir, annFile=annotations_file,
+                               transforms=transforms)
+        self.annotated_classnames = {k: v['name'] for k, v in self.coco.cats.items()}
+        self.detected_classnames = [v['name'] for k, v in self.coco.cats.items()]
 
+        self.annotated_to_detected_class_idx = {k: i for i, (k, v)
+                                                in enumerate(self.coco.cats.items())}
+        self.batch_size = batch_size
+
+    def get_classnames(self):
+        return self.detected_classnames
 
     def get_ground_truth_boxes(self, annotations):
         boxes_for_batch = []
@@ -33,3 +44,9 @@ class YoloCustomDataset(YaYoloDataset):
 
         ground_truth_boxes = torch.tensor(boxes_for_batch)
         return ground_truth_boxes
+
+    def __getitem__(self, index):
+        return CocoDetection.__getitem__(self, index)
+
+    def __len__(self):
+        return CocoDetection.__len__(self)
