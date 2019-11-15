@@ -22,7 +22,7 @@ coremltools = "*"
 #coremltools = {git= 'https://github.com/apple/coremltools.git', ref = 'master', editable = true}
 nltk = "*"
 cython = "*"
-pycocotools = "*"
+#pycocotools = "*"
 
 [requires]
 python_version = "3.6"
