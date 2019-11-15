@@ -19,7 +19,7 @@ class YoloLoss():
 
     def _localization_loss(self, detected, ground_truth_boxes):
 
-        if ground_truth_boxes.shape != (2, 0):
+        if ground_truth_boxes.shape[1] != 0:
             x = ground_truth_boxes[:, :, 0]
             y = ground_truth_boxes[:, :, 1]
             w = ground_truth_boxes[:, :, 2]
@@ -62,7 +62,7 @@ class YoloLoss():
 
     def _classification_loss(self, class_scores, ground_truth):
 
-        if class_scores.shape[2] != 0:
+        if class_scores.shape[1] != 0:
             ground_truth_class_scores = torch.zeros(class_scores.shape).type_as(class_scores)
             batch_size = ground_truth.shape[0]
             ground_truth_objects_per_image = ground_truth.shape[1]
