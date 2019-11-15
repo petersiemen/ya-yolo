@@ -25,7 +25,7 @@ def run_detect_cars(in_dir, out_file, batch_size, limit, iou_thresh, objectness_
         model.load_weights(weight_file)
         model.to(DEVICE)
         model.eval()
-        namesfile = os.path.join(HERE, '../data/coco.names')
+        namesfile = os.path.join(HERE, '../cfg/coco.names')
         class_names = load_class_names(namesfile)
 
         image_and_target_transform = Compose([
@@ -35,7 +35,8 @@ def run_detect_cars(in_dir, out_file, batch_size, limit, iou_thresh, objectness_
 
         dataset = SimpleCarDataset(
             root_dir=in_dir,
-            transforms=image_and_target_transform)
+            transforms=image_and_target_transform,
+            batch_size=batch_size)
 
         with FileWriter(file_path=out_file) as file_writer:
             car_dataset_writer = DetectedSimpleCarDatasetWriter(file_writer)
@@ -43,7 +44,8 @@ def run_detect_cars(in_dir, out_file, batch_size, limit, iou_thresh, objectness_
             cnt = detect_cars(model=model, ya_yolo_dataset=dataset, class_names=class_names,
                               car_dataset_writer=car_dataset_writer,
                               limit=limit,
-                              batch_size=batch_size, skip=skip, iou_thresh=iou_thresh, objectness_thresh=objectness_thresh,
+                              batch_size=batch_size, skip=skip, iou_thresh=iou_thresh,
+                              objectness_thresh=objectness_thresh,
                               )
             logger.info("Ran detection of {} images. Skipped first {} images".format(cnt, skip))
 
