@@ -14,16 +14,16 @@ numpy = "*"
 pillow = "*"
 tqdm = "*"
 #onnx-coreml = "*"
-onnx-coreml = {git = 'https://github.com/onnx/onnx-coreml.git', ref = 'master', editable = true}
+onnx-coreml = {git = 'https://github.com/onnx/onnx-coreml.git',ref = 'master',editable = true}
 #onnxmltools = "*"
-onnxmltools = {git = 'https://github.com/onnx/onnx-coreml.git', ref = 'master',editable = true}
+onnxmltools = {git = 'https://github.com/onnx/onnx-coreml.git',ref = 'master',editable = true}
 netron = "*"
 coremltools = "*"
 #coremltools = {git= 'https://github.com/apple/coremltools.git', ref = 'master', editable = true}
 nltk = "*"
 cython = "*"
 pycocotools = "*"
-
+nvidia-smi = "*"
 
 [requires]
 python_version = "3.6"
