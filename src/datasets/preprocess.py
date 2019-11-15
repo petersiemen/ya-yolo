@@ -41,15 +41,7 @@ class SquashResize(object):
         self.size = size
 
     def __call__(self, img, target):
-        orig_width, orig_height = img.size
         image = img.resize((self.size, self.size))
-
-        for i in range(len(target)):
-            if 'bbox' in target[i]:
-                target[i]['bbox'][0] = target[i]['bbox'][0] / orig_width * self.size  # upper left corner
-                target[i]['bbox'][1] = target[i]['bbox'][1] / orig_height * self.size  # upper left corner
-                target[i]['bbox'][2] = target[i]['bbox'][2] / orig_width * self.size  # width
-                target[i]['bbox'][3] = target[i]['bbox'][3] / orig_height * self.size
 
         return image, target
 
@@ -85,22 +77,21 @@ class PadToFit(object):
         return ImageOps.expand(resized, (left, top, right, bottom))
 
 
-class ScaleBboxRelativeToSize(object):
-    def __init__(self, size):
-        assert isinstance(size, int)
-        self.size = size
+class AbsoluteToRelativeBoundingBox(object):
 
     def __call__(self, img, target):
+        orig_width, orig_height = img.size
         for i in range(len(target)):
-            for j in range(len(target[i]['bbox'])):
-                target[i]['bbox'][j] = target[i]['bbox'][j] / self.size
+            if 'bbox' in target[i]:
+                target[i]['bbox'][0] = target[i]['bbox'][0] / orig_width  # x
+                target[i]['bbox'][1] = target[i]['bbox'][1] / orig_height  # y
+                target[i]['bbox'][2] = target[i]['bbox'][2] / orig_width  # w
+                target[i]['bbox'][3] = target[i]['bbox'][3] / orig_height  # h
 
         return img, target
 
 
 class ConvertXandYToCenterOfBoundingBox(object):
-    def __init__(self):
-        pass
 
     def __call__(self, img, target):
         for i in range(len(target)):

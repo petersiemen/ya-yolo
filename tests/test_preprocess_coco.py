@@ -1,6 +1,4 @@
 from torchvision.datasets import CocoDetection
-from torch.utils.data import DataLoader
-from torchvision.transforms.transforms import ToPILImage, RandomCrop, RandomHorizontalFlip, Resize, ToTensor
 
 from .context import *
 
@@ -36,9 +34,10 @@ def test_classnames_from_coco():
 
 def test_preprocess_coco():
     image_and_target_transform = Compose([
-        SquashResize(416),
         ConvertXandYToCenterOfBoundingBox(),
-        ScaleBboxRelativeToSize(416),
+        AbsoluteToRelativeBoundingBox(),
+        SquashResize(416),
+
         # PadToFit(255),
         # RandomCrop(200),
         # RandomHorizontalFlip(),,

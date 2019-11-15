@@ -3,7 +3,7 @@ import os
 import torch
 from torchvision.datasets import CocoDetection
 
-from datasets.YaYoloDataset import YaYoloDataset
+from datasets.yayolo_dataset import YaYoloDataset
 
 HERE = os.path.dirname(os.path.realpath(__file__))
 
@@ -29,16 +29,16 @@ class YaYoloCocoDataset(YaYoloDataset, CocoDetection):
             boxes_for_image = []
             for o_i in range(len(annotations)):
                 bbox_coordinates = annotations[o_i]['bbox']
+                if b_i < len(bbox_coordinates[0]):
+                    x = bbox_coordinates[0][b_i]
+                    y = bbox_coordinates[1][b_i]
+                    w = bbox_coordinates[2][b_i]
+                    h = bbox_coordinates[3][b_i]
+                    annotated_category_id = int(annotations[o_i]['category_id'][b_i].item())
+                    category_id = self.annotated_to_detected_class_idx[annotated_category_id]
 
-                x = bbox_coordinates[0][b_i]
-                y = bbox_coordinates[1][b_i]
-                w = bbox_coordinates[2][b_i]
-                h = bbox_coordinates[3][b_i]
-                annotated_category_id = int(annotations[o_i]['category_id'][b_i].item())
-                category_id = self.annotated_to_detected_class_idx[annotated_category_id]
-
-                box = [x, y, w, h, 1, 1, category_id, 1]
-                boxes_for_image.append(box)
+                    box = [x, y, w, h, 1, 1, category_id, 1]
+                    boxes_for_image.append(box)
 
             boxes_for_batch.append(boxes_for_image)
 

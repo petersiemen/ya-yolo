@@ -1,5 +1,3 @@
-from torchvision.datasets import CocoDetection
-
 from .context import *
 
 HERE = os.path.dirname(os.path.realpath(__file__))
@@ -24,9 +22,9 @@ def test_training():
     model.load_weights(weight_file)
 
     image_and_target_transform = Compose([
-        SquashResize(416),
         ConvertXandYToCenterOfBoundingBox(),
-        ScaleBboxRelativeToSize(416),
+        AbsoluteToRelativeBoundingBox(),
+        SquashResize(416),
         # PadToFit(255),
         # RandomCrop(200),
         # RandomHorizontalFlip(),,
@@ -51,9 +49,9 @@ def test_training_without_annotations():
     model.load_weights(weight_file)
 
     image_and_target_transform = Compose([
-        SquashResize(416),
         ConvertXandYToCenterOfBoundingBox(),
-        ScaleBboxRelativeToSize(416),
+        AbsoluteToRelativeBoundingBox(),
+        SquashResize(416),
         # PadToFit(255),
         # RandomCrop(200),
         # RandomHorizontalFlip(),,

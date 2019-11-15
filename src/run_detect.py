@@ -2,7 +2,8 @@ import optparse
 import os
 import sys
 
-from datasets.SimpleCarDataset import SimpleCarDataset, DetectedSimpleCarDatasetWriter
+from datasets.simple_car_dataset import SimpleCarDataset
+from datasets.detected_car_dataset import DetectedCarDatasetWriter
 from datasets.preprocess import *
 from yolo.detect import detect_cars
 from logging_config import *
@@ -39,7 +40,7 @@ def run_detect_cars(in_dir, out_file, batch_size, limit, iou_thresh, objectness_
             batch_size=batch_size)
 
         with FileWriter(file_path=out_file) as file_writer:
-            car_dataset_writer = DetectedSimpleCarDatasetWriter(file_writer)
+            car_dataset_writer = DetectedCarDatasetWriter(file_writer)
 
             cnt = detect_cars(model=model, ya_yolo_dataset=dataset, class_names=class_names,
                               car_dataset_writer=car_dataset_writer,

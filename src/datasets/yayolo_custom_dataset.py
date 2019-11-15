@@ -1,7 +1,6 @@
 import os
-import torch
-from datasets.YaYoloDataset import YaYoloDataset
-from yolo.utils import load_class_names
+
+from datasets.yayolo_dataset import YaYoloDataset
 
 HERE = os.path.dirname(os.path.realpath(__file__))
 

@@ -28,7 +28,7 @@ def test_detect_with_batches():
             os.remove(to_file)
 
         with FileWriter(file_path=to_file) as file_writer:
-            car_dataset_writer = DetectedSimpleCarDatasetWriter(file_writer)
+            car_dataset_writer = DetectedCarDatasetWriter(file_writer)
 
             detect_cars(model=model,
                         ya_yolo_dataset=dataset,

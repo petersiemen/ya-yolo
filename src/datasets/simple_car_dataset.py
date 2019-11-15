@@ -1,31 +1,11 @@
 import os
 import glob
 import json
-from datasets.YaYoloCustomDataset import YaYoloCustomDataset
+from datasets.yayolo_custom_dataset import YaYoloCustomDataset
 from exif import load_image_file
 from logging_config import *
 
 logger = logging.getLogger(__name__)
-
-HERE = os.path.dirname(os.path.realpath(__file__))
-
-
-class DetectedSimpleCarDatasetWriter():
-    def __init__(self, file_writer):
-        self.file_writer = file_writer
-        logger.info('Init {}.'.format(self))
-
-    def append(self, image_path, make, model, bounding_box):
-        self.file_writer.append(
-            json.dumps({'image': image_path,
-                        'make': make,
-                        'model': model,
-                        'bounding_box': bounding_box
-                        })
-        )
-
-    def __repr__(self):
-        return 'DetectedSimpleCarDatasetWriter({})'.format(self.file_writer.fd.name)
 
 
 class SimpleCarDataset(YaYoloCustomDataset):
