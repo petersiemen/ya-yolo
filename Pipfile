@@ -23,7 +23,6 @@ coremltools = "*"
 nltk = "*"
 cython = "*"
 pycocotools = "*"
-nvidia-smi = "*"
 
 [requires]
 python_version = "3.6"
