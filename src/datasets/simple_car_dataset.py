@@ -34,6 +34,9 @@ class SimpleCarDataset(YaYoloCustomDataset):
                                 'model': model
                             }])
 
+    def get_classnames(self):
+        raise NotImplementedError("Subclasses should implement this!")
+
     def __getitem__(self, index):
         """
         Args:

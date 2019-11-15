@@ -2,6 +2,7 @@ import os
 
 import torch
 from torchvision.datasets import CocoDetection
+from PIL import Image
 
 from datasets.yayolo_dataset import YaYoloDataset
 
@@ -20,8 +21,6 @@ class YaYoloCocoDataset(YaYoloDataset, CocoDetection):
                                                 in enumerate(self.coco.cats.items())}
         self.batch_size = batch_size
 
-    def get_classnames(self):
-        return self.detected_classnames
 
     def get_ground_truth_boxes(self, annotations):
         boxes_for_batch = []
@@ -46,7 +45,26 @@ class YaYoloCocoDataset(YaYoloDataset, CocoDetection):
         return ground_truth_boxes
 
     def __getitem__(self, index):
-        return CocoDetection.__getitem__(self, index)
+        """
+        Args:
+            index (int): Index
+
+        Returns:
+            tuple: Tuple (image, target). target is the object returned by ``coco.loadAnns``.
+        """
+        coco = self.coco
+        img_id = self.ids[index]
+        ann_ids = coco.getAnnIds(imgIds=img_id)
+        target = coco.loadAnns(ann_ids)
+
+        path = coco.loadImgs(img_id)[0]['file_name']
+
+        full_image_path = os.path.join(self.root, path)
+        img = Image.open(full_image_path).convert('RGB')
+        if self.transforms is not None:
+            img, target = self.transforms(img, target)
+
+        return img, target, full_image_path
 
     def __len__(self):
         return CocoDetection.__len__(self)

@@ -15,10 +15,11 @@ def test_get_indices_for_center_of_ground_truth_bounding_boxes__for_no_annotatio
 def test_training():
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
+    namesfile = os.path.join(HERE, '../cfg/coco.names')
     model_dir = os.path.join(HERE, 'models')
 
     batch_size = 3
-    model = Yolo(cfg_file=cfg_file, batch_size=batch_size)
+    model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size)
     model.load_weights(weight_file)
 
     image_and_target_transform = Compose([
@@ -42,10 +43,11 @@ def test_training():
 def test_training_without_annotations():
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
+    namesfile = os.path.join(HERE, '../cfg/coco.names')
     model_dir = os.path.join(HERE, 'models')
 
     batch_size = 2
-    model = Yolo(cfg_file=cfg_file, batch_size=batch_size)
+    model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size)
     model.load_weights(weight_file)
 
     image_and_target_transform = Compose([

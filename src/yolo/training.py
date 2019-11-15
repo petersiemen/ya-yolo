@@ -138,13 +138,13 @@ def training(model, ya_yolo_dataset, model_dir, num_epochs=1, lr=0.001, limit=No
 
     data_loader = DataLoader(ya_yolo_dataset, batch_size=ya_yolo_dataset.batch_size, shuffle=False)
     batch_size = ya_yolo_dataset.batch_size
-    classnames = ya_yolo_dataset.get_classnames()
+    class_names = model.class_names
 
     for epoch in range(1, num_epochs + 1):
 
         running_loss = 0.0
 
-        for batch_i, (images, annotations) in enumerate(data_loader):
+        for batch_i, (images, annotations, _) in enumerate(data_loader):
 
             images = images.to(DEVICE)
             if images.shape[0] != batch_size:
@@ -159,7 +159,7 @@ def training(model, ya_yolo_dataset, model_dir, num_epochs=1, lr=0.001, limit=No
             if debug:
                 print('processing batch {} with {} annotated objects per image ...'.format(batch_i + 1,
                                                                                            number_of_annotated_objects))
-                plot(ground_truth_boxes.cpu(), images, classnames, True)
+                plot(ground_truth_boxes.cpu(), images, class_names, True)
 
             model.train()
             coordinates, class_scores, confidence = model(images)
@@ -180,7 +180,7 @@ def training(model, ya_yolo_dataset, model_dir, num_epochs=1, lr=0.001, limit=No
             if debug:
                 plot(_to_plottable_boxes(boxes_with_highest_iou,
                                          batch_indices_with_highest_iou,
-                                         class_scores), images, classnames, True)
+                                         class_scores), images, class_names, True)
 
             loss = yolo_loss.loss(boxes_with_highest_iou,
                                   confidence_with_highest_iou,

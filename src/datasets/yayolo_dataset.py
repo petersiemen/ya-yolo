@@ -6,9 +6,6 @@ class YaYoloDataset(Dataset):
     def get_ground_truth_boxes(self, annotations):
         raise NotImplementedError("Subclasses should implement this!")
 
-    def get_classnames(self):
-        raise NotImplementedError("Subclasses should implement this!")
-
     def __getitem__(self, index):
         """
         Args:

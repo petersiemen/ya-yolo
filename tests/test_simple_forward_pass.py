@@ -16,8 +16,8 @@ def test_forward_yolo():
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
     namesfile = os.path.join(HERE, '../cfg/coco.names')
-    class_names = load_class_names(namesfile)
-    yolo = Yolo(cfg_file=cfg_file, batch_size=1)
+    yolo = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=1)
+    class_names = yolo.class_names
     yolo.load_weights(weight_file)
 
     image = load_image_file(os.path.join(HERE, './images/car.jpg'))

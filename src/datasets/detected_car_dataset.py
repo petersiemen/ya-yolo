@@ -78,7 +78,6 @@ class DetectedCarDataset(YaYoloCustomDataset):
     def __len__(self):
         return len(self.annotations)
 
-
     def _get_category_id(self):
         return 1
 
@@ -94,8 +93,8 @@ class DetectedCarDataset(YaYoloCustomDataset):
                     y = bbox_coordinates[1][b_i]
                     w = bbox_coordinates[2][b_i]
                     h = bbox_coordinates[3][b_i]
-                    #annotated_category_id = int(annotations[o_i]['category_id'][b_i].item())
-                    #category_id = self.annotated_to_detected_class_idx[annotated_category_id]
+                    # annotated_category_id = int(annotations[o_i]['category_id'][b_i].item())
+                    # category_id = self.annotated_to_detected_class_idx[annotated_category_id]
                     category_id = self._get_category_id()
                     box = [x, y, w, h, 1, 1, category_id, 1]
                 boxes_for_image.append(box)

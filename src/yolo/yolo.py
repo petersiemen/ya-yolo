@@ -4,20 +4,23 @@ import os
 from yolo.layers import *
 from yolo.utils import load_conv, load_conv_bn
 from yolo.yolo_builder import YoloBuilder
+from yolo.utils import load_class_names
 
 
 class Yolo(nn.Module):
-    def __init__(self, cfg_file, batch_size=1):
+    def __init__(self, cfg_file, namesfile, batch_size=1):
         super(Yolo, self).__init__()
         self.models, self.grid_sizes = YoloBuilder.run(cfg_file, batch_size)
         self.output_tensor_length = self.get_output_tensor_length()
 
+        self.class_names = load_class_names(namesfile=namesfile)
         # TODO move this somewhere else when you write the code to customize the model to
         # an arbitrary number of classes
         tmp = set([
             model.num_classes for model in self.models if isinstance(model, EagerYoloLayer)])
         assert len(tmp) == 1
         self.num_classes = tmp.pop()
+        assert self.num_classes == len(self.class_names)
 
     def save(self, dir, name):
         torch.save(self.state_dict(), os.path.join(dir, name))
