@@ -6,7 +6,7 @@ COCO_IMAGES_DIR = os.path.join(HERE, '../../../datasets/coco-small/cocoapi/image
 COCO_ANNOTATIONS_FILE = os.path.join(COCO_IMAGES_DIR, '../../annotations/instances_train2014_10_per_category.json')
 
 
-def test_detect_cars():
+def test_detect_and_process():
     image_and_target_transform = Compose([
         SquashResize(416),
         CocoToTensor()
@@ -29,13 +29,16 @@ def test_detect_cars():
 
         with FileWriter(file_path=to_file) as file_writer:
             car_dataset_writer = DetectedCarDatasetWriter(file_writer)
-
-            detect_cars(model=model,
-                        ya_yolo_dataset=dataset,
-                        car_dataset_writer=car_dataset_writer,
-                        limit=10,
-                        batch_size=batch_size,
-                        plot=True)
+            detected_dataset_helper = DetectedCarDatasetHelper(car_dataset_writer=car_dataset_writer,
+                                                               class_names=model.class_names,
+                                                               iou_thresh=0.5,
+                                                               objectness_thresh=0.9,
+                                                               batch_size=batch_size,
+                                                               plot=True)
+            detect_and_process(model=model,
+                               ya_yolo_dataset=dataset,
+                               processor=detected_dataset_helper.process_detections,
+                               limit=10)
 
 
 def test_detect_for_map_computation():
@@ -59,13 +62,23 @@ def test_detect_for_map_computation():
         SquashResize(416),
         CocoToTensor()
     ])
-    batch_size = 3
-    ya_yolo_dataset = YaYoloCocoDataset(images_dir=COCO_IMAGES_DIR, annotations_file=COCO_ANNOTATIONS_FILE,
-                                        transforms=image_and_target_transform,
-                                        batch_size=batch_size)
+    batch_size = 2
+    dataset = YaYoloCocoDataset(images_dir=COCO_IMAGES_DIR, annotations_file=COCO_ANNOTATIONS_FILE,
+                                transforms=image_and_target_transform,
+                                batch_size=batch_size)
 
     with torch.no_grad():
 
         model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size)
         model.load_weights(weight_file)
-        detect_for_map_computation(model, ya_yolo_dataset, out_dir)
+        car_dataset_writer = DetectedCarDatasetWriter(file_writer)
+        detected_dataset_helper = DetectedCarDatasetHelper(car_dataset_writer=car_dataset_writer,
+                                                           class_names=model.class_names,
+                                                           iou_thresh=0.5,
+                                                           objectness_thresh=0.9,
+                                                           batch_size=batch_size,
+                                                           plot=True)
+        detect_and_process(model=model,
+                           ya_yolo_dataset=dataset,
+                           processor=detected_dataset_helper.process_detections,
+                           limit=10)

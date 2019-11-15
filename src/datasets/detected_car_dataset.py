@@ -4,9 +4,59 @@ import torch
 import json
 from datasets.yayolo_custom_dataset import YaYoloCustomDataset
 from exif import load_image_file
+from yolo.utils import nms_for_coordinates_and_class_scores_and_confidence
+from yolo.utils import plot_boxes
 from logging_config import *
+from torchvision.transforms import transforms
+from torchvision.transforms import ToPILImage
 
 logger = logging.getLogger(__name__)
+
+to_pil_image = transforms.Compose([
+    ToPILImage()
+])
+
+
+class DetectedCarDatasetHelper():
+    def __init__(self, car_dataset_writer, class_names, iou_thresh, objectness_thresh, batch_size, plot):
+        self.car_dataset_writer = car_dataset_writer
+        self.class_names = class_names
+        self.iou_thresh = iou_thresh
+        self.objectness_thresh = objectness_thresh
+        self.plot = plot
+        self.batch_size = batch_size
+
+    def process_detections(self,
+                           coordinates,
+                           class_scores,
+                           confidence,
+                           images,
+                           annotations,
+                           image_paths,
+                           ground_truth_boxes
+                           ):
+        for b_i in range(self.batch_size):
+            boxes = nms_for_coordinates_and_class_scores_and_confidence(
+                coordinates[b_i],
+                class_scores[b_i],
+                confidence[b_i],
+                self.iou_thresh,
+                self.objectness_thresh)
+
+            if self.plot:
+                pil_image = to_pil_image(images[b_i])
+                plot_boxes(pil_image, boxes, self.class_names, True)
+
+            if len(boxes) == 1 and boxes[0][6] == 2:
+                image_path = image_paths[b_i]
+                bb = boxes[0]
+                bounding_box = {
+                    'x': bb[0], 'y': bb[1], 'w': bb[2], 'h': bb[3]
+                }
+
+                self.car_dataset_writer.append(image_path=image_path, make=annotations[0]['make'][b_i],
+                                               model=annotations[0]['model'][b_i],
+                                               bounding_box=bounding_box)
 
 
 class DetectedCarDatasetWriter():
@@ -97,7 +147,7 @@ class DetectedCarDataset(YaYoloCustomDataset):
                     # category_id = self.annotated_to_detected_class_idx[annotated_category_id]
                     category_id = self._get_category_id()
                     box = [x, y, w, h, 1, 1, category_id, 1]
-                boxes_for_image.append(box)
+                    boxes_for_image.append(box)
 
             boxes_for_batch.append(boxes_for_image)
 

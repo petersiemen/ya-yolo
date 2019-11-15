@@ -3,9 +3,10 @@ import os
 import sys
 
 from datasets.simple_car_dataset import SimpleCarDataset
-from datasets.detected_car_dataset import DetectedCarDatasetWriter
+from datasets.detected_car_dataset import DetectedCarDatasetWriter, DetectedCarDatasetHelper
+
 from datasets.preprocess import *
-from yolo.detect import detect_cars
+from yolo.detect import detect_and_process
 from logging_config import *
 from yolo.utils import load_class_names
 from yolo.yolo import Yolo
@@ -42,12 +43,17 @@ def run_detect_cars(in_dir, out_file, batch_size, limit, iou_thresh, objectness_
         with FileWriter(file_path=out_file) as file_writer:
             car_dataset_writer = DetectedCarDatasetWriter(file_writer)
 
-            cnt = detect_cars(model=model, ya_yolo_dataset=dataset, class_names=class_names,
-                              car_dataset_writer=car_dataset_writer,
-                              limit=limit,
-                              batch_size=batch_size, skip=skip, iou_thresh=iou_thresh,
-                              objectness_thresh=objectness_thresh,
-                              )
+            detected_dataset_helper = DetectedCarDatasetHelper(car_dataset_writer=car_dataset_writer,
+                                                               class_names=model.class_names,
+                                                               iou_thresh=0.5,
+                                                               objectness_thresh=0.9,
+                                                               batch_size=batch_size,
+                                                               plot=True)
+            cnt = detect_and_process(model=model,
+                                     ya_yolo_dataset=dataset,
+                                     processor=detected_dataset_helper.process_detections,
+                                     limit=limit)
+
             logger.info("Ran detection of {} images. Skipped first {} images".format(cnt, skip))
 
 
