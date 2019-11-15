@@ -19,7 +19,7 @@ class YoloLoss():
 
     def _localization_loss(self, detected, ground_truth_boxes):
 
-        if ground_truth_boxes.shape[2] == 8 and detected.shape[2] == 4:
+        if ground_truth_boxes.shape != (2, 0):
             x = ground_truth_boxes[:, :, 0]
             y = ground_truth_boxes[:, :, 1]
             w = ground_truth_boxes[:, :, 2]
