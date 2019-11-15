@@ -67,18 +67,21 @@ def test_detect_for_map_computation():
                                 transforms=image_and_target_transform,
                                 batch_size=batch_size)
 
+    iou_thresh = 0.5
+    objectness_thresh = 0.9
     with torch.no_grad():
 
         model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size)
         model.load_weights(weight_file)
-        car_dataset_writer = DetectedCarDatasetWriter(file_writer)
-        detected_dataset_helper = DetectedCarDatasetHelper(car_dataset_writer=car_dataset_writer,
-                                                           class_names=model.class_names,
-                                                           iou_thresh=0.5,
-                                                           objectness_thresh=0.9,
-                                                           batch_size=batch_size,
-                                                           plot=True)
+
+        mAPHelper = MeanAveragePrecisionHelper(out_dir=out_dir,
+                                               class_names=model.class_names,
+                                               iou_thresh=iou_thresh,
+                                               objectness_thresh=objectness_thresh,
+                                               batch_size=batch_size,
+                                               plot=True
+                                               )
         detect_and_process(model=model,
                            ya_yolo_dataset=dataset,
-                           processor=detected_dataset_helper.process_detections,
+                           processor=mAPHelper.process_detections,
                            limit=10)

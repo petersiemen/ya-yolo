@@ -46,7 +46,10 @@ class MeanAveragePrecisionHelper():
                 pil_image = to_pil_image(images[b_i])
                 plot_boxes(pil_image, boxes, self.class_names, True)
 
+            ground_truth = ground_truth_boxes[b_i]
             image_path = image_paths[b_i]
+            self.write_ground_truth_to_file(image_path, ground_truth)
+
             bb = boxes[0]
             bounding_box = {
                 'x': bb[0], 'y': bb[1], 'w': bb[2], 'h': bb[3]
@@ -55,3 +58,9 @@ class MeanAveragePrecisionHelper():
             # self.car_dataset_writer.append(image_path=image_path, make=annotations[0]['make'][b_i],
             #                                model=annotations[0]['model'][b_i],
             #                                bounding_box=bounding_box)
+
+    def write_ground_truth_to_file(self, image_path, ground_truth_boxes_for_image):
+        with open(os.path.join(self.ground_truth_dir, os.path.basename(image_path) + '.txt'), 'w') as f:
+
+            num_boxes = ground_truth_boxes_for_image.shape[0]
+            f.write('sdfgsd')
