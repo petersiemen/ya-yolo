@@ -16,3 +16,4 @@ from yolo.loss import *
 from yolo.layers import *
 from yolo.yolo_builder import *
 from yolo.helpers import *
+from yolo.convert import *
