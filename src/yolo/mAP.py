@@ -1,4 +1,5 @@
 import os
+import math
 
 from torchvision.transforms import ToPILImage
 from torchvision.transforms import transforms
@@ -15,10 +16,11 @@ to_pil_image = transforms.Compose([
 
 
 class MeanAveragePrecisionHelper():
-    def __init__(self, out_dir, class_names, iou_thresh, objectness_thresh, batch_size, plot):
+    def __init__(self, out_dir, class_names, image_size, iou_thresh, objectness_thresh, batch_size, plot):
         self.detection_results_dir = os.path.join(out_dir, "detection-results")
         self.ground_truth_dir = os.path.join(out_dir, "ground-truth")
         self.class_names = class_names
+        self.image_size = image_size
         self.iou_thresh = iou_thresh
         self.objectness_thresh = objectness_thresh
         self.batch_size = batch_size
@@ -61,6 +63,18 @@ class MeanAveragePrecisionHelper():
 
     def write_ground_truth_to_file(self, image_path, ground_truth_boxes_for_image):
         with open(os.path.join(self.ground_truth_dir, os.path.basename(image_path) + '.txt'), 'w') as f:
-
             num_boxes = ground_truth_boxes_for_image.shape[0]
-            f.write('sdfgsd')
+
+            for b_i in range(num_boxes):
+                box = ground_truth_boxes_for_image[b_i]
+                x = box[0].item()
+                y = box[1].item()
+                w = box[2].item()
+                h = box[3].item()
+                category_id = int(box[6])
+                left = int(round((x - w / 2) * self.image_size))
+                top = int(round((y - h / 2) * self.image_size))
+                right = int(round((x + w / 2) * self.image_size))
+                bottom = int(round((y + h / 2) * self.image_size))
+                category = self.class_names[category_id]
+                f.write('{} {} {} {} {}\n'.format(category, left, top, right, bottom))

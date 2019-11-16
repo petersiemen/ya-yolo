@@ -56,10 +56,11 @@ def test_detect_for_map_computation():
     namesfile = os.path.join(HERE, '../cfg/coco.names')
     out_dir = os.path.join(HERE, 'output')
 
+    image_size = 416
     image_and_target_transform = Compose([
         ConvertXandYToCenterOfBoundingBox(),
         AbsoluteToRelativeBoundingBox(),
-        SquashResize(416),
+        SquashResize(image_size),
         CocoToTensor()
     ])
     batch_size = 2
@@ -76,6 +77,7 @@ def test_detect_for_map_computation():
 
         mAPHelper = MeanAveragePrecisionHelper(out_dir=out_dir,
                                                class_names=model.class_names,
+                                               image_size=image_size,
                                                iou_thresh=iou_thresh,
                                                objectness_thresh=objectness_thresh,
                                                batch_size=batch_size,
