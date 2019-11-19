@@ -26,7 +26,7 @@ class SimpleCarDataset(YaYoloCustomDataset):
                     for image in obj['images']:
                         image_path = os.path.join(root_dir, 'images', image['path'])
 
-                        if not os.path.isfile(image_path):
+                        if not os.path.exists(image_path):
                             logger.info('skipping {} because it does not exist'.format(image_path))
                             continue
 
