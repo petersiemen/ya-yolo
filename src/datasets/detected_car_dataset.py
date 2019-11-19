@@ -45,7 +45,7 @@ class DetectedCarDatasetHelper():
                                          conf_thres=self.objectness_thresh,
                                          nms_thres=self.iou_thresh
                                          )
-
+        detected = 0
         for b_i in range(self.batch_size):
             image_path = image_paths[b_i]
             boxes = detections[b_i]
@@ -57,6 +57,7 @@ class DetectedCarDatasetHelper():
                 plot_boxes(pil_image, boxes, self.class_names, True)
 
             num_detected_cars = len([box for box in boxes if box[6] == 2])
+            detected += 1
             if num_detected_cars == 1:
 
                 bb = boxes[0]
@@ -70,10 +71,11 @@ class DetectedCarDatasetHelper():
                                                model=annotations[0]['model'][b_i],
                                                bounding_box=bounding_box)
             elif num_detected_cars > 1:
-                logger.info("Detected more than 1 car on the image. Skipping it. ({})".format(image_path))
+                logger.info("Detected more than 1 car on the image. ({})".format(image_path))
             elif num_detected_cars == 0:
-                logger.info("Detected no car on the image. Skipping it. ({})".format(image_path))
+                logger.info("Detected no car on the image ({})".format(image_path))
 
+        return detected
 
 class DetectedCarDatasetWriter():
     def __init__(self, images_dir, file_writer):
