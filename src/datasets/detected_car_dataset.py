@@ -57,9 +57,9 @@ class DetectedCarDatasetHelper():
                 plot_boxes(pil_image, boxes, self.class_names, True)
 
             num_detected_cars = len([box for box in boxes if box[6] == 2])
-            detected += 1
-            if num_detected_cars == 1:
 
+            if num_detected_cars == 1:
+                detected += 1
                 bb = boxes[0]
                 bounding_box = {
                     'x': bb[0].item(), 'y': bb[1].item(), 'w': bb[2].item(), 'h': bb[3].item()
@@ -76,6 +76,7 @@ class DetectedCarDatasetHelper():
                 logger.info("Detected no car on the image ({})".format(image_path))
 
         return detected
+
 
 class DetectedCarDatasetWriter():
     def __init__(self, images_dir, file_writer):

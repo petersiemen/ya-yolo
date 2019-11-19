@@ -57,7 +57,7 @@ class SimpleCarDataset(YaYoloCustomDataset):
         if self.transforms is not None:
             image, target = self.transforms(image, target)
 
-        logger.info('{} {} {}'.format(target, image_path, image.shape))
+        #logger.info('{} {} {}'.format(target, image_path, image.shape))
         return image, target, image_path
 
     def __len__(self):
