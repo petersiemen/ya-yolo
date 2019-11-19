@@ -1,18 +1,17 @@
-import os
-import glob
-import torch
 import json
+import os
+from shutil import copyfile
+
+import torch
+from torchvision.transforms import ToPILImage
+from torchvision.transforms import transforms
+
 from datasets.yayolo_custom_dataset import YaYoloCustomDataset
 from exif import load_image_file
-from yolo.utils import nms_for_coordinates_and_class_scores_and_confidence
-from yolo.utils import non_max_suppression
-from yolo.utils import xyxy2xywh
-
-from yolo.utils import plot_boxes
 from logging_config import *
-from torchvision.transforms import transforms
-from torchvision.transforms import ToPILImage
-from shutil import copyfile
+from yolo.utils import non_max_suppression
+from yolo.utils import plot_boxes
+from yolo.utils import xyxy2xywh
 
 logger = logging.getLogger(__name__)
 
@@ -121,6 +120,11 @@ class DetectedCarDataset(YaYoloCustomDataset):
         with open(json_file) as f:
             for line in f:
                 obj = json.loads(line)
+                image_path = obj['image']
+                if not os.path.exists(image_path):
+                    logger.error('image {} does not exist'.format(image_path))
+                    continue
+
                 self.image_paths.append(obj['image'])
                 self.annotations.append([obj])
 
