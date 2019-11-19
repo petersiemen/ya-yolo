@@ -52,9 +52,12 @@ class SimpleCarDataset(YaYoloCustomDataset):
         image_path = self.image_paths[index]
         image = load_image_file(image_path)
 
+
+
         if self.transforms is not None:
             image, target = self.transforms(image, target)
 
+        logger.info('{} {} {}'.format(target, image_path, image.shape))
         return image, target, image_path
 
     def __len__(self):
