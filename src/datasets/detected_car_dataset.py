@@ -45,7 +45,7 @@ class DetectedCarDatasetHelper():
                 self.objectness_thresh)
 
             if self.debug:
-                pil_image = to_pil_image(images[b_i])
+                pil_image = to_pil_image(images[b_i].cpu())
                 plot_boxes(pil_image, boxes, self.class_names, True)
 
             num_detected_cars = len([box for box in boxes if box[6] == 2])
