@@ -25,6 +25,11 @@ class SimpleCarDataset(YaYoloCustomDataset):
                     model = obj['model']
                     for image in obj['images']:
                         image_path = os.path.join(root_dir, 'images', image['path'])
+
+                        if not os.path.isfile(image_path):
+                            logger.info('skipping {} because it does not exist'.format(image_path))
+                            continue
+
                         self.image_paths.append(image_path)
                         # we append a list of annotations for every image here because
                         # the YaYoloDataset convention is that it should be possible to attach multiple targets per image
