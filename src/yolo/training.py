@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 
 from device import DEVICE
 from yolo.loss import YoloLoss
-from yolo.utils import boxes_iou
+from yolo.utils import boxes_iou_for_single_boxes
 from yolo.utils import plot_boxes
 
 to_pil_image = transforms.Compose([
@@ -50,7 +50,7 @@ def get_indices_for_highest_iou_with_ground_truth_bounding_box(indices, ground_t
         indices_for_image = []
         for box_j in range(ground_truth_boxes.shape[1]):
             candidate_coordinates = coordinates[batch_i, indices[batch_i, box_j]]
-            ious = [boxes_iou(ground_truth_boxes[batch_i, box_j], candidate_box) for candidate_box in
+            ious = [boxes_iou_for_single_boxes(ground_truth_boxes[batch_i, box_j], candidate_box) for candidate_box in
                     candidate_coordinates]
             max_iou_idx = np.argmax(ious)
             indices_for_image.append(indices[batch_i, box_j, max_iou_idx])

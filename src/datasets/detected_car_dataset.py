@@ -5,6 +5,9 @@ import json
 from datasets.yayolo_custom_dataset import YaYoloCustomDataset
 from exif import load_image_file
 from yolo.utils import nms_for_coordinates_and_class_scores_and_confidence
+from yolo.utils import non_max_suppression
+from yolo.utils import xyxy2xywh
+
 from yolo.utils import plot_boxes
 from logging_config import *
 from torchvision.transforms import transforms
@@ -35,14 +38,19 @@ class DetectedCarDatasetHelper():
                            annotations,
                            image_paths
                            ):
+
+        prediction = torch.cat((coordinates, confidence.unsqueeze(-1), class_scores), -1)
+
+        detections = non_max_suppression(prediction=prediction,
+                                         conf_thres=self.objectness_thresh,
+                                         nms_thres=self.iou_thresh
+                                         )
+
         for b_i in range(self.batch_size):
             image_path = image_paths[b_i]
-            boxes = nms_for_coordinates_and_class_scores_and_confidence(
-                coordinates[b_i],
-                class_scores[b_i],
-                confidence[b_i],
-                self.iou_thresh,
-                self.objectness_thresh)
+            boxes = detections[b_i]
+            if len(boxes) > 0:
+                boxes[..., :4] = xyxy2xywh(boxes[..., :4])
 
             if self.debug:
                 pil_image = to_pil_image(images[b_i].cpu())
@@ -53,7 +61,7 @@ class DetectedCarDatasetHelper():
 
                 bb = boxes[0]
                 bounding_box = {
-                    'x': bb[0], 'y': bb[1], 'w': bb[2], 'h': bb[3]
+                    'x': bb[0].item(), 'y': bb[1].item(), 'w': bb[2].item(), 'h': bb[3].item()
                 }
 
                 copied_image_path = self.car_dataset_writer.copy_image(image_path)
