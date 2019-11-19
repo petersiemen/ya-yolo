@@ -33,39 +33,35 @@ def detect_and_process(model,
         total = limit
 
     for batch_i, (images, annotations, image_paths) in tqdm(enumerate(data_loader), total=total / batch_size):
-        try:
-            cnt += batch_size
-            if skip is not None and skip > cnt:
-                logger.info('Skipping batch of {}. (skip: {}, cnt: {})'.format(batch_size, skip, cnt))
-                continue
+        cnt += batch_size
+        if skip is not None and skip > cnt:
+            logger.info('Skipping batch of {}. (skip: {}, cnt: {})'.format(batch_size, skip, cnt))
+            continue
 
-            images = images.to(DEVICE)
-            logger.info('Start detection on batch {} of {} images...'.format(batch_i, len(images)))
+        images = images.to(DEVICE)
+        logger.info('Start detection on batch {} of {} images...'.format(batch_i, len(images)))
 
-            before = time.time()
-            coordinates, class_scores, confidence = model(images)
-            class_scores = torch.nn.Softmax(dim=2)(class_scores)
-            logger.info('Forward pass on {} images took {} s'.format(len(images), time.time() - before))
+        before = time.time()
+        coordinates, class_scores, confidence = model(images)
+        class_scores = torch.nn.Softmax(dim=2)(class_scores)
+        logger.info('Forward pass on {} images took {} s'.format(len(images), time.time() - before))
 
-            processor(
-                coordinates,
-                class_scores,
-                confidence,
-                images,
-                annotations,
-                image_paths
-            )
+        processor(
+            coordinates,
+            class_scores,
+            confidence,
+            images,
+            annotations,
+            image_paths
+        )
 
-            logger.info('Detected {} in {} images '.format(detected, cnt))
-            if limit is not None:
-                if cnt > limit:
-                    logger.info(
-                        'Stopping detection here. Limit {} has been reached after running detection on {} images'.format(
-                            limit, cnt))
-                    return cnt
-            del images
-        except Exception as ex:
-            logger.error(ex)
-            return cnt
+        logger.info('Detected {} in {} images '.format(detected, cnt))
+        if limit is not None:
+            if cnt > limit:
+                logger.info(
+                    'Stopping detection here. Limit {} has been reached after running detection on {} images'.format(
+                        limit, cnt))
+                return cnt
+        del images
 
     return cnt

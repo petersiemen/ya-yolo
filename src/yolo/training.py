@@ -203,6 +203,7 @@ def training(model, ya_yolo_dataset, model_dir, num_epochs=1, lr=0.001, limit=No
                 print('Epoch: {}, Batch: {}, Avg. Loss: {}'.format(epoch, batch_i + 1, running_loss / 1000))
                 running_loss = 0.0
 
+
             if limit is not None and batch_i + 1 >= limit:
                 print('Stop here after training {} batches (limit: {})'.format(batch_i, limit))
                 return

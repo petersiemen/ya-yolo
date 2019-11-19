@@ -275,14 +275,14 @@ def nms_for_coordinates_and_class_scores_and_confidence(coordinates,
     for i in range(len(sortIds)):
 
         # Get the bounding box with the highest detection confidence first
-        box_i = coordinates[sortIds[i]].detach().numpy().tolist()
-        det_conf = confidence[sortIds[i]].detach().item()
-        class_id = cls_max_ids[sortIds[i]].detach().item()
-        class_cnf = cls_max_confs[sortIds[i]].detach().item()
+        box_i = coordinates[sortIds[i]].detach().cpu().numpy().tolist()
+        det_conf = confidence[sortIds[i]].detach().cpu().item()
+        class_id = cls_max_ids[sortIds[i]].detach().cpu().item()
+        class_cnf = cls_max_confs[sortIds[i]].detach().cpu().item()
         box_i.append(det_conf)
         box_i.append(class_cnf)
         box_i.append(class_id)
-        box_i.append(sortIds[i].detach().item())
+        box_i.append(sortIds[i].detach().cpu().item())
 
         # Check that the detection confidence is not zero
         if det_conf > score_threshold:
