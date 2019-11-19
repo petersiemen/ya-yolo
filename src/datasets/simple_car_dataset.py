@@ -35,8 +35,8 @@ class SimpleCarDataset(YaYoloCustomDataset):
                         # the YaYoloDataset convention is that it should be possible to attach multiple targets per image
                         self.annotations.append([
                             {
-                                'make': make,
-                                'model': model
+                                'make': make if make is not None else 'UNKNOWN',
+                                'model': model if model is not None else 'UNKNOWN'
                             }])
 
     def __getitem__(self, index):
