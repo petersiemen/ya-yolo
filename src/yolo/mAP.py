@@ -1,5 +1,6 @@
 import os
 import math
+from shutil import copyfile
 
 from torchvision.transforms import ToPILImage
 from torchvision.transforms import transforms
@@ -16,15 +17,21 @@ to_pil_image = transforms.Compose([
 
 
 class MeanAveragePrecisionHelper():
-    def __init__(self, out_dir, class_names, image_size, iou_thresh, objectness_thresh, batch_size, plot):
+    def __init__(self, out_dir, class_names, image_size, get_ground_thruth_boxes, iou_thresh, objectness_thresh, batch_size, keep_images=False,
+                 plot=False):
         self.detection_results_dir = os.path.join(out_dir, "detection-results")
         self.ground_truth_dir = os.path.join(out_dir, "ground-truth")
+        self.images_optional_dir = os.path.join(out_dir, "images-optional")
+        self.keep_images = keep_images
+
         self.class_names = class_names
         self.image_size = image_size
+        self.get_ground_truth_boxes = get_ground_thruth_boxes
         self.iou_thresh = iou_thresh
         self.objectness_thresh = objectness_thresh
         self.batch_size = batch_size
         self.plot = plot
+
 
     def process_detections(self,
                            coordinates,
@@ -32,9 +39,10 @@ class MeanAveragePrecisionHelper():
                            confidence,
                            images,
                            annotations,
-                           image_paths,
-                           ground_truth_boxes
+                           image_paths
                            ):
+
+        ground_truth_boxes = self.get_ground_truth_boxes(annotations)
 
         for b_i in range(self.batch_size):
             boxes = nms_for_coordinates_and_class_scores_and_confidence(
@@ -52,9 +60,19 @@ class MeanAveragePrecisionHelper():
             image_path = image_paths[b_i]
             self.write_detections_to_file(image_path, boxes)
             self.write_ground_truth_to_file(image_path, ground_truth)
+            if self.keep_images:
+                self.copy_image_file(image_path)
+
+    def _remove_extension(self, filename):
+        return filename.rsplit('.', 1)[0]
+
+    def copy_image_file(self, image_path):
+        copyfile(image_path, os.path.join(self.images_optional_dir,
+                                          os.path.basename(image_path)))
 
     def write_detections_to_file(self, image_path, detected_boxes):
-        with open(os.path.join(self.detection_results_dir, os.path.basename(image_path) + '.txt'), 'w') as f:
+        with open(os.path.join(self.detection_results_dir,
+                               self._remove_extension(os.path.basename(image_path)) + '.txt'), 'w') as f:
             num_boxes = len(detected_boxes)
             writable_boxes = []
             for b_i in range(num_boxes):
@@ -75,7 +93,8 @@ class MeanAveragePrecisionHelper():
                 f.write(" ".join([str(el) for el in box]) + '\n')
 
     def write_ground_truth_to_file(self, image_path, ground_truth_boxes_for_image):
-        with open(os.path.join(self.ground_truth_dir, os.path.basename(image_path) + '.txt'), 'w') as f:
+        with open(os.path.join(self.ground_truth_dir,
+                               self._remove_extension(os.path.basename(image_path)) + '.txt'), 'w') as f:
             num_boxes = ground_truth_boxes_for_image.shape[0]
 
             for b_i in range(num_boxes):

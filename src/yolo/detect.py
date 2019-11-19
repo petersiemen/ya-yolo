@@ -2,14 +2,10 @@ import time
 
 import torch
 from torch.utils.data import DataLoader
-from torchvision import transforms
-from torchvision.transforms import ToPILImage
 from tqdm import tqdm
 
 from device import DEVICE
 from logging_config import *
-from yolo.mAP import MeanAveragePrecisionHelper
-from yolo.utils import plot_boxes, nms_for_coordinates_and_class_scores_and_confidence
 
 logger = logging.getLogger(__name__)
 
@@ -57,8 +53,7 @@ def detect_and_process(model,
                 confidence,
                 images,
                 annotations,
-                image_paths,
-                ya_yolo_dataset.get_ground_truth_boxes(annotations)
+                image_paths
             )
 
             logger.info('Detected {} in {} images '.format(detected, cnt))

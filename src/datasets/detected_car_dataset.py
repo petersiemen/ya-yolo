@@ -9,6 +9,7 @@ from yolo.utils import plot_boxes
 from logging_config import *
 from torchvision.transforms import transforms
 from torchvision.transforms import ToPILImage
+from shutil import copyfile
 
 logger = logging.getLogger(__name__)
 
@@ -18,12 +19,12 @@ to_pil_image = transforms.Compose([
 
 
 class DetectedCarDatasetHelper():
-    def __init__(self, car_dataset_writer, class_names, iou_thresh, objectness_thresh, batch_size, plot):
+    def __init__(self, car_dataset_writer, class_names, iou_thresh, objectness_thresh, batch_size, debug):
         self.car_dataset_writer = car_dataset_writer
         self.class_names = class_names
         self.iou_thresh = iou_thresh
         self.objectness_thresh = objectness_thresh
-        self.plot = plot
+        self.debug = debug
         self.batch_size = batch_size
 
     def process_detections(self,
@@ -32,10 +33,10 @@ class DetectedCarDatasetHelper():
                            confidence,
                            images,
                            annotations,
-                           image_paths,
-                           ground_truth_boxes
+                           image_paths
                            ):
         for b_i in range(self.batch_size):
+            image_path = image_paths[b_i]
             boxes = nms_for_coordinates_and_class_scores_and_confidence(
                 coordinates[b_i],
                 class_scores[b_i],
@@ -43,26 +44,39 @@ class DetectedCarDatasetHelper():
                 self.iou_thresh,
                 self.objectness_thresh)
 
-            if self.plot:
+            if self.debug:
                 pil_image = to_pil_image(images[b_i])
                 plot_boxes(pil_image, boxes, self.class_names, True)
 
-            if len(boxes) == 1 and boxes[0][6] == 2:
-                image_path = image_paths[b_i]
+            num_detected_cars = len([box for box in boxes if box[6] == 2])
+            if num_detected_cars == 1:
+
                 bb = boxes[0]
                 bounding_box = {
                     'x': bb[0], 'y': bb[1], 'w': bb[2], 'h': bb[3]
                 }
 
-                self.car_dataset_writer.append(image_path=image_path, make=annotations[0]['make'][b_i],
+                copied_image_path = self.car_dataset_writer.copy_image(image_path)
+                self.car_dataset_writer.append(image_path=copied_image_path,
+                                               make=annotations[0]['make'][b_i],
                                                model=annotations[0]['model'][b_i],
                                                bounding_box=bounding_box)
+            elif num_detected_cars > 1:
+                logger.info("Detected more than 1 car on the image. Skipping it. ({})".format(image_path))
+            elif num_detected_cars == 0:
+                logger.info("Detected no car on the image. Skipping it. ({})".format(image_path))
 
 
 class DetectedCarDatasetWriter():
-    def __init__(self, file_writer):
+    def __init__(self, images_dir, file_writer):
+        self.images_dir = images_dir
         self.file_writer = file_writer
         logger.info('Init {}.'.format(self))
+
+    def copy_image(self, image_path):
+        to_path = os.path.join(self.images_dir, os.path.basename(image_path))
+        copyfile(image_path, to_path)
+        return to_path
 
     def append(self, image_path, make, model, bounding_box):
         self.file_writer.append(
@@ -77,7 +91,7 @@ class DetectedCarDatasetWriter():
         )
 
     def __repr__(self):
-        return 'DetectedSimpleCarDatasetWriter({})'.format(self.file_writer.fd.name)
+        return 'DetectedSimpleCarDatasetWriter({}, {})'.format(self.images_dir, self.file_writer.fd.name)
 
 
 class DetectedCarDataset(YaYoloCustomDataset):

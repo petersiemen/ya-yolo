@@ -1,12 +1,13 @@
 from .context import *
 import shutil
+import datetime
 
 HERE = os.path.dirname(os.path.realpath(__file__))
 COCO_IMAGES_DIR = os.path.join(HERE, '../../../datasets/coco-small/cocoapi/images/train2014')
 COCO_ANNOTATIONS_FILE = os.path.join(COCO_IMAGES_DIR, '../../annotations/instances_train2014_10_per_category.json')
 
 
-def test_detect_and_process():
+def test_detect_and_process_for_detected_car_dataset():
     image_and_target_transform = Compose([
         SquashResize(416),
         CocoToTensor()
@@ -15,9 +16,19 @@ def test_detect_and_process():
     dataset = SimpleCarDataset(root_dir='/home/peter/datasets/simple_cars/2019-08-23T10-22-54',
                                transforms=image_and_target_transform, batch_size=2)
 
-    to_file = os.path.join(HERE, 'output/cars.json')
-    if os.path.exists(to_file):
-        os.remove(to_file)
+    detected_cars = os.path.join(HERE, 'output/detected-cars')
+    if os.path.exists(detected_cars):
+        shutil.rmtree(detected_cars)
+    os.mkdir(detected_cars)
+
+    now = datetime.datetime.now()
+    now_str = now.strftime("%Y-%m-%dT%H-%M-%S")
+    detected_dataset_dir = os.path.join(detected_cars, now_str)
+    os.mkdir(detected_dataset_dir)
+
+    feed_file = os.path.join(detected_dataset_dir, "feed.json")
+    detected_dataset_images_dir = os.path.join(detected_dataset_dir, "images")
+    os.mkdir(detected_dataset_images_dir)
 
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
@@ -27,29 +38,33 @@ def test_detect_and_process():
         model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size)
         model.load_weights(weight_file)
 
-        with FileWriter(file_path=to_file) as file_writer:
-            car_dataset_writer = DetectedCarDatasetWriter(file_writer)
+        with FileWriter(file_path=feed_file) as file_writer:
+            car_dataset_writer = DetectedCarDatasetWriter(detected_dataset_images_dir, file_writer)
             detected_dataset_helper = DetectedCarDatasetHelper(car_dataset_writer=car_dataset_writer,
                                                                class_names=model.class_names,
                                                                iou_thresh=0.5,
                                                                objectness_thresh=0.9,
                                                                batch_size=batch_size,
-                                                               plot=True)
+                                                               debug=True)
             detect_and_process(model=model,
                                ya_yolo_dataset=dataset,
                                processor=detected_dataset_helper.process_detections,
                                limit=10)
 
 
-def test_detect_for_map_computation():
-    detection_results_dir = os.path.join(HERE, 'output/detection-results')
-    ground_truth_dir = os.path.join(HERE, 'output/ground-truth')
+def test_detect_process_for_map_computation():
+    detection_results_dir = os.path.join(HERE, 'output/input/detection-results')
+    ground_truth_dir = os.path.join(HERE, 'output/input/ground-truth')
+    images_optional_dir = os.path.join(HERE, 'output/input/images-optional')
     if os.path.exists(detection_results_dir):
         shutil.rmtree(detection_results_dir)
     os.mkdir(detection_results_dir)
     if os.path.exists(ground_truth_dir):
         shutil.rmtree(ground_truth_dir)
     os.mkdir(ground_truth_dir)
+    if os.path.exists(images_optional_dir):
+        shutil.rmtree(images_optional_dir)
+    os.mkdir(images_optional_dir)
 
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
@@ -69,7 +84,7 @@ def test_detect_for_map_computation():
                                 batch_size=batch_size)
 
     iou_thresh = 0.5
-    objectness_thresh = 0.9
+    objectness_thresh = 0.1
     with torch.no_grad():
 
         model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size)
@@ -78,12 +93,14 @@ def test_detect_for_map_computation():
         mAPHelper = MeanAveragePrecisionHelper(out_dir=out_dir,
                                                class_names=model.class_names,
                                                image_size=image_size,
+                                               get_ground_thruth_boxes=dataset.get_ground_truth_boxes,
                                                iou_thresh=iou_thresh,
                                                objectness_thresh=objectness_thresh,
                                                batch_size=batch_size,
+                                               keep_images=True,
                                                plot=True
                                                )
         detect_and_process(model=model,
                            ya_yolo_dataset=dataset,
                            processor=mAPHelper.process_detections,
-                           limit=10)
+                           limit=3)
