@@ -108,3 +108,4 @@ venv.bak/
 # ya-yolo
 cfg/yolov3.weights
 *.pt
+runs

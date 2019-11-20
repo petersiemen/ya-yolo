@@ -22,7 +22,8 @@ coremltools = "*"
 #coremltools = {git= 'https://github.com/apple/coremltools.git', ref = 'master', editable = true}
 nltk = "*"
 cython = "*"
-#pycocotools = "*"
+pycocotools = "*"
+tensorboard = "*"
 
 [requires]
 python_version = "3.6"
