@@ -11,8 +11,12 @@ class YoloLoss():
     def print(self):
         return AsciiTable([
             ["Localization", "Objectness", "No Objectness", "Classification", "Total Loss"],
-            [self.localization_loss.item(), self.objectness_loss.item(), self.no_objectness_loss.item(),
-             self.classification_loss.item(), self.total_loss.item()]
+            [
+                "{:.6f}".format(self.localization_loss.item()),
+                "{:.6f}".format(self.objectness_loss.item()),
+                "{:.6f}".format(self.no_objectness_loss.item()),
+                "{:.6f}".format(self.classification_loss.item()),
+                "{:.6f}".format(self.total_loss.item())]
 
         ]).table
 
