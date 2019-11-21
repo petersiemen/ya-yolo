@@ -180,6 +180,8 @@ def plot_boxes(img, boxes, class_names, plot_labels, color=None):
     :return:
     """
 
+    print("plotting  {} for image".format(len(boxes)))
+
     # Define a tensor used to set the colors of the bounding boxes
     colors = torch.FloatTensor([[1, 0, 1], [0, 0, 1], [0, 1, 1], [0, 1, 0], [1, 1, 0], [1, 0, 0]])
 

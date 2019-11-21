@@ -72,8 +72,7 @@ def plot(ground_truth_boxes, images, classnames, plot_labels):
         plot_boxes(pil_image, boxes, classnames, plot_labels)
 
 
-def to_plottable_boxes(obj_mask, coordinates, class_scores, confidence,
-                       num_of_boxes_in_image_in_batch):
+def to_plottable_boxes(obj_mask, coordinates, class_scores, confidence):
     batch_size = coordinates.size(0)
     filtered_coordinates = coordinates[obj_mask]
     filtered_confidences = confidence[obj_mask]
@@ -87,7 +86,10 @@ def to_plottable_boxes(obj_mask, coordinates, class_scores, confidence,
             torch.cat((filtered_coordinates[i], torch.tensor([det_conf, class_score, class_idx]).to(DEVICE)),
                       0).detach())
 
-    return torch.cat(boxes).view(batch_size, num_of_boxes_in_image_in_batch, -1)
+    if len(boxes) > 0:
+        return torch.cat(boxes).view(batch_size, -1, 7)
+    else:
+        return torch.tensor([[] for _ in range(batch_size)])
 
 
 def build_targets(coordinates, class_scores, ground_truth_boxes, grid_sizes):
@@ -158,7 +160,7 @@ def training(model,
 
         running_loss = 0.0
 
-        for batch_i, (images, annotations, _) in enumerate(data_loader):
+        for batch_i, (images, annotations, image_paths) in enumerate(data_loader):
 
             images = images.to(DEVICE)
             if images.shape[0] != batch_size:
@@ -179,7 +181,7 @@ def training(model,
                                                                                            num_of_boxes_in_image_in_batch))
                 plot(ground_truth_boxes.cpu(), images, class_names, True)
                 plot(
-                    to_plottable_boxes(obj_mask, coordinates, class_scores, confidence, num_of_boxes_in_image_in_batch),
+                    to_plottable_boxes(obj_mask, coordinates, class_scores, confidence),
                     images, class_names, True)
 
             yolo_loss = YoloLoss(coordinates,
