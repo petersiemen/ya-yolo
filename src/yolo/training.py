@@ -44,7 +44,7 @@ def get_indices_for_center_of_ground_truth_bounding_boxes(ground_truth_boxes, gr
                                                                     y=y))
             indices_for_image.append(indices)
         indices_for_batch.append(indices_for_image)
-    return torch.tensor(indices_for_batch)
+    return torch.tensor(indices_for_batch).to(DEVICE)
 
 
 def get_indices_for_highest_iou_with_ground_truth_bounding_box(indices, ground_truth_boxes, coordinates):
@@ -60,7 +60,7 @@ def get_indices_for_highest_iou_with_ground_truth_bounding_box(indices, ground_t
             max_iou_idx = np.argmax(ious)
             indices_for_image.append(indices[image_i, box_j, max_iou_idx])
         indices_for_batch.append(indices_for_image)
-    return torch.tensor(indices_for_batch)
+    return torch.tensor(indices_for_batch).to(DEVICE)
 
 
 def select_boxes(coordinates, indices):
@@ -70,7 +70,7 @@ def select_boxes(coordinates, indices):
     for image_i in range(batch_size):
         for box_j in range(num_of_boxes_in_image_in_batch):
             boxes_for_batch[image_i, box_j] = coordinates[image_i, indices[image_i, box_j]]
-    return boxes_for_batch
+    return boxes_for_batch.to(DEVICE)
 
 
 def select_class_scores(class_scores, indices):
@@ -89,7 +89,7 @@ def select_class_scores(class_scores, indices):
     for image_i in range(batch_size):
         for box_j in range(num_of_boxes_in_image_in_batch):
             classes_scores_for_batch[image_i, box_j] = class_scores[image_i, indices[image_i, box_j]]
-    return classes_scores_for_batch
+    return classes_scores_for_batch.to(DEVICE)
 
 
 def select_confidence(confidence, indices):
@@ -99,7 +99,7 @@ def select_confidence(confidence, indices):
     for image_i in range(batch_size):
         for box_j in range(num_of_boxes_in_image_in_batch):
             confidence_for_batch[image_i, box_j] = confidence[image_i, indices[image_i, box_j]]
-    return confidence_for_batch
+    return confidence_for_batch.to(DEVICE)
 
 
 def negative_select_confidences(confidence, indices):
@@ -171,12 +171,11 @@ def training(model,
                                                                                              batch_size))
                 continue
 
-            ground_truth_boxes = ya_yolo_dataset.get_ground_truth_boxes(annotations).to(DEVICE)
-
-            number_of_annotated_objects = ground_truth_boxes.shape[1]
 
             coordinates, class_scores, confidence = model(images)
 
+            ground_truth_boxes = ya_yolo_dataset.get_ground_truth_boxes(annotations).to(DEVICE)
+            number_of_annotated_objects = ground_truth_boxes.shape[1]
             batch_indices_of_ground_truth_boxes = get_indices_for_center_of_ground_truth_bounding_boxes(
                 ground_truth_boxes, grid_sizes)
             batch_indices_with_highest_iou = get_indices_for_highest_iou_with_ground_truth_bounding_box(
