@@ -72,7 +72,9 @@ def plot(ground_truth_boxes, images, classnames, plot_labels):
         plot_boxes(pil_image, boxes, classnames, plot_labels)
 
 
-def to_plottable_boxes(obj_mask, coordinates, class_scores, confidence):
+def to_plottable_boxes(obj_mask, coordinates, class_scores, confidence,
+                       num_of_boxes_in_image_in_batch):
+    batch_size = coordinates.size(0)
     filtered_coordinates = coordinates[obj_mask]
     filtered_confidences = confidence[obj_mask]
     filtered_class_scores = class_scores[obj_mask]
@@ -82,9 +84,10 @@ def to_plottable_boxes(obj_mask, coordinates, class_scores, confidence):
         class_score, class_idx = torch.max(filtered_class_scores[i], 0)
 
         boxes.append(
-            torch.cat((filtered_coordinates[i], torch.tensor([det_conf, class_score, class_idx]).to(DEVICE)), 0).detach())
+            torch.cat((filtered_coordinates[i], torch.tensor([det_conf, class_score, class_idx]).to(DEVICE)),
+                      0).detach())
 
-    return torch.cat(boxes).view(2, 2, -1)
+    return torch.cat(boxes).view(batch_size, num_of_boxes_in_image_in_batch, -1)
 
 
 def build_targets(coordinates, class_scores, ground_truth_boxes, grid_sizes):
@@ -122,7 +125,6 @@ def build_targets(coordinates, class_scores, ground_truth_boxes, grid_sizes):
     for image_i in range(batch_indices_of_ground_truth_boxes.size(0)):
         for box_j in range(batch_indices_of_ground_truth_boxes.size(1)):
             ground_truth_box = ground_truth_boxes[image_i, box_j]
-            class_idx = int(ground_truth_box[6])
             for idx in batch_indices_of_ground_truth_boxes[image_i, box_j]:
                 cls_mask[image_i, idx] = True
 
@@ -167,16 +169,18 @@ def training(model,
             coordinates, class_scores, confidence = model(images)
 
             ground_truth_boxes = ya_yolo_dataset.get_ground_truth_boxes(annotations).to(DEVICE)
-            number_of_annotated_objects = ground_truth_boxes.shape[1]
+            num_of_boxes_in_image_in_batch = ground_truth_boxes.shape[1]
 
             obj_mask, noobj_mask, cls_mask, target_coordinates, target_confidence, target_class_scores = build_targets(
                 coordinates, class_scores, ground_truth_boxes, grid_sizes)
 
             if debug:
                 print('processing batch {} with {} annotated objects per image ...'.format(batch_i + 1,
-                                                                                           number_of_annotated_objects))
+                                                                                           num_of_boxes_in_image_in_batch))
                 plot(ground_truth_boxes.cpu(), images, class_names, True)
-                plot(to_plottable_boxes(obj_mask, coordinates, class_scores, confidence), images, class_names, True)
+                plot(
+                    to_plottable_boxes(obj_mask, coordinates, class_scores, confidence, num_of_boxes_in_image_in_batch),
+                    images, class_names, True)
 
             yolo_loss = YoloLoss(coordinates,
                                  confidence,
