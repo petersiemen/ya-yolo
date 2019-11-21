@@ -79,12 +79,12 @@ def to_plottable_boxes(obj_mask, coordinates, class_scores, confidence):
     filtered_class_scores = class_scores[obj_mask]
     boxes = []
     for i in range(filtered_coordinates.size(0)):
-        det_conf = filtered_confidences[i]
+        det_conf = filtered_confidences[i].detach().cpu()
         class_score, class_idx = torch.max(filtered_class_scores[i], 0)
 
         boxes.append(
-            torch.cat((filtered_coordinates[i], torch.tensor([det_conf, class_score, class_idx]).to(DEVICE)),
-                      0).detach())
+            torch.cat((filtered_coordinates[i].detach().cpu(), torch.tensor([det_conf, class_score, class_idx])),
+                      0))
 
     if len(boxes) > 0:
         return torch.cat(boxes).view(batch_size, -1, 7)
