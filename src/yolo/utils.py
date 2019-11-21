@@ -167,6 +167,19 @@ def load_class_names(namesfile):
 
 
 def plot_boxes(img, boxes, class_names, plot_labels, color=None):
+    """
+    :param img: PIL image
+    :param boxes:  list of lists of boxes
+
+     0  1  2  3  4          5          6
+    [x, y, w, h, det_conf,  cls_conf,  cls_id]
+
+    :param class_names:
+    :param plot_labels:
+    :param color:
+    :return:
+    """
+
     # Define a tensor used to set the colors of the bounding boxes
     colors = torch.FloatTensor([[1, 0, 1], [0, 0, 1], [0, 1, 1], [0, 1, 0], [1, 1, 0], [1, 0, 0]])
 
@@ -207,6 +220,7 @@ def plot_boxes(img, boxes, class_names, plot_labels, color=None):
 
         # Use the same color to plot the bounding boxes of the same object class
         if len(box) >= 7 and class_names:
+            det_conf = box[4]
             cls_conf = box[5]
             cls_id = box[6]
             classes = len(class_names)
@@ -239,70 +253,19 @@ def plot_boxes(img, boxes, class_names, plot_labels, color=None):
         # If plot_labels = True then plot the corresponding label
         if plot_labels:
             # Create a string with the object class name and the corresponding object class probability
-            conf_tx = class_names[int(cls_id)] + ': {:.1f}'.format(cls_conf)
+            conf_tx = class_names[int(cls_id)] + ': {:.1f}'.format(cls_conf) + ' ({:.1f})'.format(det_conf)
 
             # Define x and y offsets for the labels
             lxc = (width * 0.266) / 100
             lyc = (height * 1.180) / 100
 
             # Draw the labels on top of the image
-            a.text(x1 + lxc, y1 - lyc, conf_tx, fontsize=24, color='k',
+            a.text(x1 + lxc, y1 - lyc, conf_tx, fontsize=16, color='k',
                    bbox=dict(facecolor=rgb, edgecolor=rgb, alpha=0.8))
 
     plt.show()
 
 
-#
-# def nms_for_coordinates_and_class_scores_and_confidence(coordinates,
-#                                                         class_scores,
-#                                                         confidence,
-#                                                         iou_thresh,
-#                                                         score_threshold):
-#     assert coordinates.size(0) == confidence.size(0), "coordinates and objectnesses must match size in dimension 1"
-#     assert coordinates.size(0) == class_scores.size(0), "coordinates and objectnesses must match size in dimension 1"
-#
-#     # Get the detection confidence of each predicted bounding box
-#     cls_max_confs, cls_max_ids = torch.max(class_scores, 1)
-#
-#     # Sort the indices of the bounding boxes by detection confidence value in descending order.
-#     # We ignore the first returned element since we are only interested in the sorted indices
-#     # sorted_cnfs, sortIds = torch.sort(cls_max_confs, descending=True)
-#     sorted_cnfs, sortIds = torch.sort(confidence, descending=True)
-#
-#     # Create an empty list to hold the best bounding boxes after
-#     # Non-Maximal Suppression (NMS) is performed
-#     best_boxes = []
-#     # Perform Non-Maximal Suppression
-#     for i in range(len(sortIds)):
-#
-#         # Get the bounding box with the highest detection confidence first
-#         box_i = coordinates[sortIds[i]].detach().cpu().numpy().tolist()
-#         det_conf = confidence[sortIds[i]].detach().cpu().item()
-#         class_id = cls_max_ids[sortIds[i]].detach().cpu().item()
-#         class_cnf = cls_max_confs[sortIds[i]].detach().cpu().item()
-#         box_i.append(det_conf)
-#         box_i.append(class_cnf)
-#         box_i.append(class_id)
-#         box_i.append(sortIds[i].detach().cpu().item())
-#
-#         # Check that the detection confidence is not zero
-#         if det_conf > score_threshold:
-#             # Save the bounding box
-#             best_boxes.append(box_i)
-#
-#             # Go through the rest of the bounding boxes in the list and calculate their IOU with
-#             # respect to the previous selected box_i.
-#             for j in range(i + 1, len(sortIds)):
-#                 box_j = coordinates[sortIds[j]]
-#
-#                 # If the IOU of box_i and box_j is higher than the given IOU threshold set
-#                 # box_j's detection confidence to zero.
-#                 if boxes_iou_for_single_boxes(box_i, box_j) > iou_thresh:
-#                     confidence[sortIds[j]] = 0
-#
-#     return best_boxes
-
-#
 def boxes_iou_for_single_boxes(box1, box2):
     # Get the Width and Height of each bounding box
     width_box1 = box1[2]
@@ -346,8 +309,6 @@ def boxes_iou_for_single_boxes(box1, box2):
     iou = intersection_area / union_area
 
     return iou
-
-
 
 
 def build_targets(pred_boxes, pred_cls, target, anchors, ignore_thres):
