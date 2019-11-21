@@ -1,13 +1,13 @@
 import numpy as np
 import torch
-from torchvision import transforms
-from torchvision.transforms import ToPILImage
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-from yolo.utils import boxes_iou_for_single_boxes
+from torchvision import transforms
+from torchvision.transforms import ToPILImage
 
 from device import DEVICE
 from yolo.loss import YoloLoss
+from yolo.utils import boxes_iou_for_single_boxes
 from yolo.utils import plot_boxes
 
 to_pil_image = transforms.Compose([
@@ -136,6 +136,48 @@ def _to_plottable_boxes(boxes, batch_indices_with_highest_iou, class_scores):
     return boxes_for_batch
 
 
+def build_targets(coordinates, class_scores, ground_truth_boxes, grid_sizes):
+    batch_size = coordinates.size(0)
+    num_anchors = 3
+    num_classes = class_scores.size(-1)
+    total_num_of_grid_cells = sum([gs * gs * num_anchors for gs in grid_sizes])
+
+    obj_mask = torch.zeros(size=(batch_size, total_num_of_grid_cells), dtype=torch.bool, device=DEVICE)
+    noobj_mask = torch.ones(size=(batch_size, total_num_of_grid_cells), dtype=torch.bool, device=DEVICE)
+    cls_mask = torch.zeros(size=(batch_size, total_num_of_grid_cells), dtype=torch.bool, device=DEVICE)
+    target_coordinates = torch.zeros(size=(batch_size, total_num_of_grid_cells, 4), dtype=torch.float32, device=DEVICE)
+    target_class_scores = torch.zeros(size=(batch_size, total_num_of_grid_cells, num_classes), dtype=torch.float32,
+                                      device=DEVICE)
+    target_confidence = torch.zeros(size=(batch_size, total_num_of_grid_cells), dtype=torch.float32, device=DEVICE)
+
+    batch_indices_of_ground_truth_boxes = get_indices_for_center_of_ground_truth_bounding_boxes(
+        ground_truth_boxes, grid_sizes)
+
+    batch_indices_with_highest_iou = get_indices_for_highest_iou_with_ground_truth_bounding_box(
+        batch_indices_of_ground_truth_boxes, ground_truth_boxes, coordinates
+    )
+
+    for image_i in range(batch_indices_with_highest_iou.size(0)):
+        for box_j in range(batch_indices_with_highest_iou.size(1)):
+            idx = batch_indices_with_highest_iou[image_i, box_j]
+            obj_mask[image_i, idx] = True
+            noobj_mask[image_i, idx] = False
+
+            ground_truth_box = ground_truth_boxes[image_i, box_j]
+            target_coordinates[image_i, idx] = ground_truth_box[0:4]
+            target_confidence[image_i, idx] = 1
+            target_class_scores[image_i, idx, int(ground_truth_box[6])] = 1
+
+    for image_i in range(batch_indices_of_ground_truth_boxes.size(0)):
+        for box_j in range(batch_indices_of_ground_truth_boxes.size(1)):
+            ground_truth_box = ground_truth_boxes[image_i, box_j]
+            class_idx = int(ground_truth_box[6])
+            for idx in batch_indices_of_ground_truth_boxes[image_i, box_j]:
+                cls_mask[image_i, idx] = True
+
+    return obj_mask, noobj_mask, cls_mask, target_coordinates, target_confidence, target_class_scores
+
+
 def training(model,
              ya_yolo_dataset,
              model_dir,
@@ -171,41 +213,46 @@ def training(model,
                                                                                              batch_size))
                 continue
 
-
             coordinates, class_scores, confidence = model(images)
 
             ground_truth_boxes = ya_yolo_dataset.get_ground_truth_boxes(annotations).to(DEVICE)
             number_of_annotated_objects = ground_truth_boxes.shape[1]
-            batch_indices_of_ground_truth_boxes = get_indices_for_center_of_ground_truth_bounding_boxes(
-                ground_truth_boxes, grid_sizes)
-            batch_indices_with_highest_iou = get_indices_for_highest_iou_with_ground_truth_bounding_box(
-                batch_indices_of_ground_truth_boxes, ground_truth_boxes, coordinates
-            )
 
-            boxes_with_highest_iou = select_boxes(coordinates, batch_indices_with_highest_iou)
-            confidence_with_highest_iou = select_confidence(confidence, batch_indices_with_highest_iou)
+            obj_mask, noobj_mask, cls_mask, target_coordinates, target_confidence, target_class_scores = build_targets(
+                coordinates, class_scores, ground_truth_boxes, grid_sizes)
 
-            no_object_confidences = negative_select_confidences(confidence, batch_indices_with_highest_iou)
-            class_scores_for_ground_truth_boxes = select_class_scores(class_scores,
-                                                                      batch_indices_of_ground_truth_boxes)
+            #
+            # batch_indices_of_ground_truth_boxes = get_indices_for_center_of_ground_truth_bounding_boxes(
+            #     ground_truth_boxes, grid_sizes)
+            # batch_indices_with_highest_iou = get_indices_for_highest_iou_with_ground_truth_bounding_box(
+            #     batch_indices_of_ground_truth_boxes, ground_truth_boxes, coordinates
+            # )
+            #
+            # boxes_with_highest_iou = select_boxes(coordinates, batch_indices_with_highest_iou)
+            # confidence_with_highest_iou = select_confidence(confidence, batch_indices_with_highest_iou)
+            #
+            # no_object_confidences = negative_select_confidences(confidence, batch_indices_with_highest_iou)
+            # class_scores_for_ground_truth_boxes = select_class_scores(class_scores,
+            #                                                           batch_indices_of_ground_truth_boxes)
 
             if debug:
                 print('processing batch {} with {} annotated objects per image ...'.format(batch_i + 1,
                                                                                            number_of_annotated_objects))
                 plot(ground_truth_boxes.cpu(), images, class_names, True)
-                plot(_to_plottable_boxes(boxes_with_highest_iou,
-                                         batch_indices_with_highest_iou,
-                                         class_scores), images, class_names, True)
+                # plot(_to_plottable_boxes(boxes_with_highest_iou,
+                #                          batch_indices_with_highest_iou,
+                #                          class_scores), images, class_names, True)
 
-            yolo_loss = YoloLoss(
-                boxes_with_highest_iou,
-                confidence_with_highest_iou,
-                no_object_confidences,
-                class_scores_for_ground_truth_boxes,
-                ground_truth_boxes,
-                lambda_coord=lambda_coord,
-                lambda_no_obj=lambda_no_obj
-            )
+            yolo_loss = YoloLoss(coordinates,
+                                  confidence,
+                                  class_scores,
+                                  obj_mask,
+                                  noobj_mask,
+                                  cls_mask,
+                                  target_coordinates,
+                                  target_confidence,
+                                  target_class_scores)
+
             loss = yolo_loss.get()
 
             # zero the parameter (weight) gradients
