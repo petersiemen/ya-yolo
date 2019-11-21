@@ -24,6 +24,7 @@ nltk = "*"
 cython = "*"
 pycocotools = "*"
 tensorboard = "*"
+terminaltables = "*"
 
 [requires]
 python_version = "3.6"

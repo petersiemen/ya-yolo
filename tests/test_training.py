@@ -20,7 +20,7 @@ def test_training():
     namesfile = os.path.join(HERE, '../cfg/coco.names')
     model_dir = os.path.join(HERE, 'models')
 
-    batch_size = 3
+    batch_size = 2
     lr = 0.001
     model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size)
     model.load_weights(weight_file)
@@ -29,9 +29,6 @@ def test_training():
         ConvertXandYToCenterOfBoundingBox(),
         AbsoluteToRelativeBoundingBox(),
         SquashResize(416),
-        # PadToFit(255),
-        # RandomCrop(200),
-        # RandomHorizontalFlip(),,
         CocoToTensor()
     ])
 
@@ -48,7 +45,11 @@ def test_training():
 
     training(model=model, ya_yolo_dataset=ya_yolo_dataset, model_dir=model_dir,
              summary_writer=summary_writer,
-             num_epochs=1, lr=lr, limit=1,
+             lambda_coord=5,
+             lambda_no_obj=0.5,
+             epochs=1,
+             lr=lr,
+             limit=1,
              debug=True)
 
     summary_writer.close()

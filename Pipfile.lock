@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "5117853736454355cb8cdd59ab6e6a687c0732e70dbb6be5a07da9fa93fc444b"
+            "sha256": "affc411fc39c546d9cc530ef3ad46f750fa22aa625d9c2514a408efec1f47c8c"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -458,10 +458,10 @@
         },
         "netron": {
             "hashes": [
-                "sha256:873b1fa1d68a2ff0bb9286a91aba426cc562433172fa7b8953ebc61825af78fe"
+                "sha256:6b3ee1c25d73bcd80592798e86a24c215698169d35efc883eab3b0f92cb4246f"
             ],
             "index": "pypi",
-            "version": "==3.5.5"
+            "version": "==3.5.6"
         },
         "nltk": {
             "hashes": [
@@ -822,6 +822,13 @@
                 "sha256:a43dcb3e353bc680dd0783b1d9c3fc28d529f190bc54ba9a229f72fe6e7a54d7"
             ],
             "version": "==0.8.3"
+        },
+        "terminaltables": {
+            "hashes": [
+                "sha256:f3eb0eb92e3833972ac36796293ca0906e998dc3be91fbe1f8615b331b853b81"
+            ],
+            "index": "pypi",
+            "version": "==3.1.0"
         },
         "testpath": {
             "hashes": [
