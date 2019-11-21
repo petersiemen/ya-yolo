@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
-from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 from torchvision.transforms import ToPILImage
 
@@ -126,7 +125,6 @@ def build_targets(coordinates, class_scores, ground_truth_boxes, grid_sizes):
 
     for image_i in range(batch_indices_of_ground_truth_boxes.size(0)):
         for box_j in range(batch_indices_of_ground_truth_boxes.size(1)):
-            ground_truth_box = ground_truth_boxes[image_i, box_j]
             for idx in batch_indices_of_ground_truth_boxes[image_i, box_j]:
                 cls_mask[image_i, idx] = True
 
@@ -192,7 +190,10 @@ def training(model,
                                  cls_mask,
                                  target_coordinates,
                                  target_confidence,
-                                 target_class_scores)
+                                 target_class_scores,
+                                 lambda_coord=lambda_coord,
+                                 lambda_no_obj=lambda_no_obj
+                                 )
 
             loss = yolo_loss.get()
 
