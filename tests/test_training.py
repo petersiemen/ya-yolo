@@ -38,10 +38,6 @@ def test_training():
 
     summary_writer = SummaryWriter(comment=f' batch_size={batch_size} lr={lr}')
 
-    # summary_writer.add_graph(model, sample_images)
-
-    # grid = torchvision.utils.make_grid(sample_images)
-    # summary_writer.add_image('images', grid, 0)
 
     training(model=model, ya_yolo_dataset=ya_yolo_dataset, model_dir=model_dir,
              summary_writer=summary_writer,
@@ -62,6 +58,7 @@ def test_training_without_annotations():
     model_dir = os.path.join(HERE, 'models')
 
     batch_size = 2
+    lr = 0.001
     model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size)
     model.load_weights(weight_file)
 
@@ -88,5 +85,13 @@ def test_training_without_annotations():
                                           transforms=image_and_target_transform,
                                           batch_size=batch_size)
 
-    training(model=model, ya_yolo_dataset=ya_yolo_dataset, model_dir=model_dir, num_epochs=1, lr=0.001, limit=3,
+    summary_writer = SummaryWriter(comment=f' batch_size={batch_size} lr={lr}')
+    training(model=model, ya_yolo_dataset=ya_yolo_dataset, model_dir=model_dir,
+             summary_writer=summary_writer,
+             lambda_coord=5,
+             lambda_no_obj=0.5,
+             epochs=1,
+             lr=lr,
+             limit=1,
              debug=True)
+
