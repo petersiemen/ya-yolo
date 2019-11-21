@@ -175,11 +175,6 @@ def training(model,
 
             number_of_annotated_objects = ground_truth_boxes.shape[1]
 
-            if debug:
-                print('processing batch {} with {} annotated objects per image ...'.format(batch_i + 1,
-                                                                                           number_of_annotated_objects))
-                plot(ground_truth_boxes.cpu(), images, class_names, True)
-
             coordinates, class_scores, confidence = model(images)
 
             batch_indices_of_ground_truth_boxes = get_indices_for_center_of_ground_truth_bounding_boxes(
@@ -196,6 +191,9 @@ def training(model,
                                                                       batch_indices_of_ground_truth_boxes)
 
             if debug:
+                print('processing batch {} with {} annotated objects per image ...'.format(batch_i + 1,
+                                                                                           number_of_annotated_objects))
+                plot(ground_truth_boxes.cpu(), images, class_names, True)
                 plot(_to_plottable_boxes(boxes_with_highest_iou,
                                          batch_indices_with_highest_iou,
                                          class_scores), images, class_names, True)
