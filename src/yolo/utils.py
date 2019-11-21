@@ -251,100 +251,100 @@ def plot_boxes(img, boxes, class_names, plot_labels, color=None):
 
     plt.show()
 
+#
+# def nms_for_coordinates_and_class_scores_and_confidence(coordinates,
+#                                                         class_scores,
+#                                                         confidence,
+#                                                         iou_thresh,
+#                                                         score_threshold):
+#     assert coordinates.size(0) == confidence.size(0), "coordinates and objectnesses must match size in dimension 1"
+#     assert coordinates.size(0) == class_scores.size(0), "coordinates and objectnesses must match size in dimension 1"
+#
+#     # Get the detection confidence of each predicted bounding box
+#     cls_max_confs, cls_max_ids = torch.max(class_scores, 1)
+#
+#     # Sort the indices of the bounding boxes by detection confidence value in descending order.
+#     # We ignore the first returned element since we are only interested in the sorted indices
+#     # sorted_cnfs, sortIds = torch.sort(cls_max_confs, descending=True)
+#     sorted_cnfs, sortIds = torch.sort(confidence, descending=True)
+#
+#     # Create an empty list to hold the best bounding boxes after
+#     # Non-Maximal Suppression (NMS) is performed
+#     best_boxes = []
+#     # Perform Non-Maximal Suppression
+#     for i in range(len(sortIds)):
+#
+#         # Get the bounding box with the highest detection confidence first
+#         box_i = coordinates[sortIds[i]].detach().cpu().numpy().tolist()
+#         det_conf = confidence[sortIds[i]].detach().cpu().item()
+#         class_id = cls_max_ids[sortIds[i]].detach().cpu().item()
+#         class_cnf = cls_max_confs[sortIds[i]].detach().cpu().item()
+#         box_i.append(det_conf)
+#         box_i.append(class_cnf)
+#         box_i.append(class_id)
+#         box_i.append(sortIds[i].detach().cpu().item())
+#
+#         # Check that the detection confidence is not zero
+#         if det_conf > score_threshold:
+#             # Save the bounding box
+#             best_boxes.append(box_i)
+#
+#             # Go through the rest of the bounding boxes in the list and calculate their IOU with
+#             # respect to the previous selected box_i.
+#             for j in range(i + 1, len(sortIds)):
+#                 box_j = coordinates[sortIds[j]]
+#
+#                 # If the IOU of box_i and box_j is higher than the given IOU threshold set
+#                 # box_j's detection confidence to zero.
+#                 if boxes_iou_for_single_boxes(box_i, box_j) > iou_thresh:
+#                     confidence[sortIds[j]] = 0
+#
+#     return best_boxes
 
-def nms_for_coordinates_and_class_scores_and_confidence(coordinates,
-                                                        class_scores,
-                                                        confidence,
-                                                        iou_thresh,
-                                                        score_threshold):
-    assert coordinates.size(0) == confidence.size(0), "coordinates and objectnesses must match size in dimension 1"
-    assert coordinates.size(0) == class_scores.size(0), "coordinates and objectnesses must match size in dimension 1"
-
-    # Get the detection confidence of each predicted bounding box
-    cls_max_confs, cls_max_ids = torch.max(class_scores, 1)
-
-    # Sort the indices of the bounding boxes by detection confidence value in descending order.
-    # We ignore the first returned element since we are only interested in the sorted indices
-    # sorted_cnfs, sortIds = torch.sort(cls_max_confs, descending=True)
-    sorted_cnfs, sortIds = torch.sort(confidence, descending=True)
-
-    # Create an empty list to hold the best bounding boxes after
-    # Non-Maximal Suppression (NMS) is performed
-    best_boxes = []
-    # Perform Non-Maximal Suppression
-    for i in range(len(sortIds)):
-
-        # Get the bounding box with the highest detection confidence first
-        box_i = coordinates[sortIds[i]].detach().cpu().numpy().tolist()
-        det_conf = confidence[sortIds[i]].detach().cpu().item()
-        class_id = cls_max_ids[sortIds[i]].detach().cpu().item()
-        class_cnf = cls_max_confs[sortIds[i]].detach().cpu().item()
-        box_i.append(det_conf)
-        box_i.append(class_cnf)
-        box_i.append(class_id)
-        box_i.append(sortIds[i].detach().cpu().item())
-
-        # Check that the detection confidence is not zero
-        if det_conf > score_threshold:
-            # Save the bounding box
-            best_boxes.append(box_i)
-
-            # Go through the rest of the bounding boxes in the list and calculate their IOU with
-            # respect to the previous selected box_i.
-            for j in range(i + 1, len(sortIds)):
-                box_j = coordinates[sortIds[j]]
-
-                # If the IOU of box_i and box_j is higher than the given IOU threshold set
-                # box_j's detection confidence to zero.
-                if boxes_iou_for_single_boxes(box_i, box_j) > iou_thresh:
-                    confidence[sortIds[j]] = 0
-
-    return best_boxes
-
-
-def boxes_iou_for_single_boxes(box1, box2):
-    # Get the Width and Height of each bounding box
-    width_box1 = box1[2]
-    height_box1 = box1[3]
-    width_box2 = box2[2]
-    height_box2 = box2[3]
-
-    # Calculate the area of the each bounding box
-    area_box1 = width_box1 * height_box1
-    area_box2 = width_box2 * height_box2
-
-    # Find the vertical edges of the union of the two bounding boxes
-    mx = min(box1[0] - width_box1 / 2.0, box2[0] - width_box2 / 2.0)
-    Mx = max(box1[0] + width_box1 / 2.0, box2[0] + width_box2 / 2.0)
-
-    # Calculate the width of the union of the two bounding boxes
-    union_width = Mx - mx
-
-    # Find the horizontal edges of the union of the two bounding boxes
-    my = min(box1[1] - height_box1 / 2.0, box2[1] - height_box2 / 2.0)
-    My = max(box1[1] + height_box1 / 2.0, box2[1] + height_box2 / 2.0)
-
-    # Calculate the height of the union of the two bounding boxes
-    union_height = My - my
-
-    # Calculate the width and height of the area of intersection of the two bounding boxes
-    intersection_width = width_box1 + width_box2 - union_width
-    intersection_height = height_box1 + height_box2 - union_height
-
-    # If the the boxes don't overlap then their IOU is zero
-    if intersection_width <= 0 or intersection_height <= 0:
-        return 0.0
-
-    # Calculate the area of intersection of the two bounding boxes
-    intersection_area = intersection_width * intersection_height
-
-    # Calculate the area of the union of the two bounding boxes
-    union_area = area_box1 + area_box2 - intersection_area
-
-    # Calculate the IOU
-    iou = intersection_area / union_area
-
-    return iou
+#
+# def boxes_iou_for_single_boxes(box1, box2):
+#     # Get the Width and Height of each bounding box
+#     width_box1 = box1[2]
+#     height_box1 = box1[3]
+#     width_box2 = box2[2]
+#     height_box2 = box2[3]
+#
+#     # Calculate the area of the each bounding box
+#     area_box1 = width_box1 * height_box1
+#     area_box2 = width_box2 * height_box2
+#
+#     # Find the vertical edges of the union of the two bounding boxes
+#     mx = min(box1[0] - width_box1 / 2.0, box2[0] - width_box2 / 2.0)
+#     Mx = max(box1[0] + width_box1 / 2.0, box2[0] + width_box2 / 2.0)
+#
+#     # Calculate the width of the union of the two bounding boxes
+#     union_width = Mx - mx
+#
+#     # Find the horizontal edges of the union of the two bounding boxes
+#     my = min(box1[1] - height_box1 / 2.0, box2[1] - height_box2 / 2.0)
+#     My = max(box1[1] + height_box1 / 2.0, box2[1] + height_box2 / 2.0)
+#
+#     # Calculate the height of the union of the two bounding boxes
+#     union_height = My - my
+#
+#     # Calculate the width and height of the area of intersection of the two bounding boxes
+#     intersection_width = width_box1 + width_box2 - union_width
+#     intersection_height = height_box1 + height_box2 - union_height
+#
+#     # If the the boxes don't overlap then their IOU is zero
+#     if intersection_width <= 0 or intersection_height <= 0:
+#         return 0.0
+#
+#     # Calculate the area of intersection of the two bounding boxes
+#     intersection_area = intersection_width * intersection_height
+#
+#     # Calculate the area of the union of the two bounding boxes
+#     union_area = area_box1 + area_box2 - intersection_area
+#
+#     # Calculate the IOU
+#     iou = intersection_area / union_area
+#
+#     return iou
 
 
 def build_targets(pred_boxes, pred_cls, target, anchors, ignore_thres):

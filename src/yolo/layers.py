@@ -5,10 +5,10 @@ from device import DEVICE
 
 
 class ConvolutionalLayer(nn.Module):
-    def __init__(self, in_channels, height, width, out_channels, kernel_size, stride, padding, batch_normalize=1,
+    def __init__(self, layer_idx, in_channels, height, width, out_channels, kernel_size, stride, padding,
+                 batch_normalize=1,
                  activation=None):
         super(ConvolutionalLayer, self).__init__()
-        models = nn.ModuleList()
         self.in_channels = in_channels
         self.height = height
         self.width = width
@@ -18,24 +18,34 @@ class ConvolutionalLayer(nn.Module):
         self.padding = padding
         self.batch_normalize = batch_normalize
 
-        if batch_normalize:
-            models.append(nn.Conv2d(in_channels=in_channels,
-                                    out_channels=out_channels,
-                                    kernel_size=kernel_size,
-                                    stride=stride,
-                                    padding=padding,
-                                    bias=False))
-            models.append(nn.BatchNorm2d(out_channels))
-        else:
-            models.append(nn.Conv2d(in_channels=in_channels,
-                                    out_channels=out_channels,
-                                    kernel_size=kernel_size,
-                                    stride=stride,
-                                    padding=padding))
-        if activation == 'leaky':
-            models.append(nn.LeakyReLU(0.1, inplace=True))
+        modules = nn.Sequential()
 
-        self.models = models
+        if batch_normalize:
+            modules.add_module(f"conv_{layer_idx}",
+                               nn.Conv2d(in_channels=in_channels,
+                                         out_channels=out_channels,
+                                         kernel_size=kernel_size,
+                                         stride=stride,
+                                         padding=padding,
+                                         bias=False)
+                               )
+            modules.add_module(f"batch_norm_{layer_idx}",
+                               nn.BatchNorm2d(out_channels)
+                               )
+        else:
+            modules.add_module(f"conv_{layer_idx}",
+                               nn.Conv2d(in_channels=in_channels,
+                                         out_channels=out_channels,
+                                         kernel_size=kernel_size,
+                                         stride=stride,
+                                         padding=padding)
+                               )
+
+        if activation == 'leaky':
+            modules.add_module(f"relu_{layer_idx}",
+                               nn.LeakyReLU(0.1, inplace=True))
+
+        self.models = modules
 
     def __repr__(self):
         _, out_width, out_height = self.get_output_chw()

@@ -69,7 +69,7 @@ def test_detect_process_for_map_computation():
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
     namesfile = os.path.join(HERE, '../cfg/coco.names')
-    out_dir = os.path.join(HERE, 'output')
+    out_dir = os.path.join(HERE, 'output/input')
 
     image_size = 416
     image_and_target_transform = Compose([

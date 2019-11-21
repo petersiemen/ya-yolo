@@ -27,12 +27,14 @@ class YoloBuilder:
                 is_pad = int(block['pad'])
                 padding = (kernel_size - 1) // 2 if is_pad else 0
                 activation = block['activation']
-                layer = ConvolutionalLayer(in_channels=channels, height=height, width=width,
+                layer = ConvolutionalLayer(layer_idx=idx-1, in_channels=channels, height=height, width=width,
                                            out_channels=filters, kernel_size=kernel_size, stride=stride,
                                            padding=padding, batch_normalize=batch_normalize, activation=activation
                                            )
                 channels, height, width = layer.get_output_chw()
                 models.append(layer)
+
+
             elif block['type'] == 'shortcut':
                 _from = int(block['from'])
                 layer = ShortcutLayer(_from=_from, in_channels=channels, height=height, width=width)

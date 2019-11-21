@@ -3,10 +3,10 @@ import torch
 from torchvision import transforms
 from torchvision.transforms import ToPILImage
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 
 from device import DEVICE
 from yolo.loss import YoloLoss
-from yolo.utils import boxes_iou_for_single_boxes
 from yolo.utils import plot_boxes
 
 to_pil_image = transforms.Compose([
@@ -127,7 +127,8 @@ def _to_plottable_boxes(boxes, batch_indices_with_highest_iou, class_scores):
     return boxes_for_batch
 
 
-def training(model, ya_yolo_dataset, model_dir, num_epochs=1, lr=0.001, limit=None, debug=False, print_every=10):
+def training(model, ya_yolo_dataset, model_dir, summary_writer, num_epochs=1, lr=0.001, limit=None, debug=False,
+             print_every=10):
     print('Number of images: ', len(ya_yolo_dataset))
 
     model.to(DEVICE)
@@ -182,11 +183,12 @@ def training(model, ya_yolo_dataset, model_dir, num_epochs=1, lr=0.001, limit=No
                                          batch_indices_with_highest_iou,
                                          class_scores), images, class_names, True)
 
-            loss = yolo_loss.loss(boxes_with_highest_iou,
-                                  confidence_with_highest_iou,
-                                  no_object_confidences,
-                                  class_scores_for_ground_truth_boxes,
-                                  ground_truth_boxes)
+            localization_loss, objectness_loss, no_objectness_loss, classification_loss, loss = yolo_loss.loss(
+                boxes_with_highest_iou,
+                confidence_with_highest_iou,
+                no_object_confidences,
+                class_scores_for_ground_truth_boxes,
+                ground_truth_boxes)
 
             # zero the parameter (weight) gradients
             optimizer.zero_grad()
@@ -197,12 +199,12 @@ def training(model, ya_yolo_dataset, model_dir, num_epochs=1, lr=0.001, limit=No
 
             # print loss statistics
             # to convert loss into a scalar and add it to the running_loss, use .item()
-            running_loss += loss.item()
+            running_loss += loss.item() / batch_size
 
+            #summary_writer.add_scalar('Loss/train', running_loss, batch_i)
             if batch_i % print_every == 0:  # print every print_every +1  batches
-                print('Epoch: {}, Batch: {}, Avg. Loss: {}'.format(epoch, batch_i + 1, running_loss / 1000))
+                print('Epoch: {}, Batch: {}, Loss: {}'.format(epoch, batch_i + 1, running_loss))
                 running_loss = 0.0
-
 
             if limit is not None and batch_i + 1 >= limit:
                 print('Stop here after training {} batches (limit: {})'.format(batch_i, limit))

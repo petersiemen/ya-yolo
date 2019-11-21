@@ -12,7 +12,11 @@ class YoloLoss():
         self.lambda_no_obj = lambda_no_obj
 
     def loss(self, detected, confidence, no_object_confidences, class_scores, ground_truth):
-        return self._localization_loss(detected, ground_truth) + \
+        return self._localization_loss(detected, ground_truth), \
+               self._objectness_loss(confidence), \
+               self._no_objectness_loss(no_object_confidences), \
+               self._classification_loss(class_scores, ground_truth), \
+               self._localization_loss(detected, ground_truth) + \
                self._objectness_loss(confidence) + \
                self._no_objectness_loss(no_object_confidences) + \
                self._classification_loss(class_scores, ground_truth)
