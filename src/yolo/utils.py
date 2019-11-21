@@ -253,7 +253,8 @@ def plot_boxes(img, boxes, class_names, plot_labels, color=None):
         # If plot_labels = True then plot the corresponding label
         if plot_labels:
             # Create a string with the object class name and the corresponding object class probability
-            conf_tx = class_names[int(cls_id)] + ': {:.1f}'.format(cls_conf) + ' ({:.1f})'.format(det_conf)
+            conf_tx = class_names[int(cls_id)] + ', det_conf: {:.1f}'.format(det_conf) + ' / cls_conf:{:.1f}'.format(
+                cls_conf)
 
             # Define x and y offsets for the labels
             lxc = (width * 0.266) / 100
