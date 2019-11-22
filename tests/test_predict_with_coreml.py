@@ -20,12 +20,19 @@ def test_predict_with_coreml():
     print(output)
 
     coordinates = output["boxes"]
-    scores = output["scores"]
+    class_scores = output["scores"]
     confidence = output["confidence"]
 
     coordinates = torch.tensor(coordinates)
-    scores = torch.tensor(scores)
-    for b_i in range(coordinates.size(0)):
-        boxes = nms_for_coordinates_and_class_scores_and_confidence(coordinates[b_i], scores[b_i], confidence[b_i], 0.6,
-                                                                    0.9)
-        plot_boxes(image, boxes, class_names, True)
+    class_scores = torch.tensor(class_scores)
+
+    prediction = torch.cat((coordinates, confidence.unsqueeze(-1), class_scores), -1)
+    detections = non_max_suppression(prediction=prediction,
+                                     conf_thres=0.9,
+                                     nms_thres=0.5)
+
+    boxes = detections[0].detach()
+    if len(boxes) > 0:
+        boxes[..., :4] = xyxy2xywh(boxes[..., :4])
+
+    plot_boxes(image, boxes, class_names, True)

@@ -8,6 +8,9 @@ from device import DEVICE
 from yolo.loss import YoloLoss
 from yolo.utils import boxes_iou_for_single_boxes
 from yolo.utils import plot_boxes
+from logging_config import *
+
+logger = logging.getLogger(__name__)
 
 to_pil_image = transforms.Compose([
     ToPILImage()
@@ -131,18 +134,18 @@ def build_targets(coordinates, class_scores, ground_truth_boxes, grid_sizes):
     return obj_mask, noobj_mask, cls_mask, target_coordinates, target_confidence, target_class_scores
 
 
-def training(model,
-             ya_yolo_dataset,
-             model_dir,
-             summary_writer,
-             epochs=1,
-             lr=0.001,
-             lambda_coord=5,
-             lambda_no_obj=0.5,
-             limit=None,
-             debug=False,
-             print_every=10):
-    print('Number of images: ', len(ya_yolo_dataset))
+def train(model,
+          ya_yolo_dataset,
+          model_dir,
+          summary_writer,
+          epochs=1,
+          lr=0.001,
+          lambda_coord=5,
+          lambda_no_obj=0.5,
+          limit=None,
+          debug=False,
+          print_every=10):
+    logger.info('Number of images: ', len(ya_yolo_dataset))
 
     model.to(DEVICE)
     model.train()
@@ -162,8 +165,9 @@ def training(model,
 
             images = images.to(DEVICE)
             if images.shape[0] != batch_size:
-                print('Skipping batch {} because batch-size {} is not as expected {}'.format(batch_i + 1, len(images),
-                                                                                             batch_size))
+                logger.info(
+                    'Skipping batch {} because batch-size {} is not as expected {}'.format(batch_i + 1, len(images),
+                                                                                           batch_size))
                 continue
 
             coordinates, class_scores, confidence = model(images)
@@ -175,8 +179,8 @@ def training(model,
                 coordinates, class_scores, ground_truth_boxes, grid_sizes)
 
             if debug:
-                print('processing batch {} with {} annotated objects per image ...'.format(batch_i + 1,
-                                                                                           num_of_boxes_in_image_in_batch))
+                logger.info('processing batch {} with {} annotated objects per image ...'.format(batch_i + 1,
+                                                                                                 num_of_boxes_in_image_in_batch))
                 plot(ground_truth_boxes.cpu(), images, class_names, True)
                 plot(
                     to_plottable_boxes(obj_mask, coordinates, class_scores, confidence),
@@ -217,7 +221,7 @@ def training(model,
                 running_loss = 0.0
 
             if limit is not None and batch_i + 1 >= limit:
-                print('Stop here after training {} batches (limit: {})'.format(batch_i, limit))
+                logger.info('Stop here after training {} batches (limit: {})'.format(batch_i, limit))
                 return
 
         model.save(model_dir,

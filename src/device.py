@@ -8,4 +8,4 @@ if torch.cuda.is_available():
 else:
     DEVICE = "cpu"
 
-logger.info('************ Using {} as device **************'.format(DEVICE))
+logger.info('torch.cuda.is_available() = {} ... using {} as DEVICE ...'.format(torch.cuda.is_available(), DEVICE))
