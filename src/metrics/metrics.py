@@ -1,12 +1,13 @@
 from collections import defaultdict
-from mean_average_precision.classify import Classify
-from mean_average_precision.precision import Precision
-from mean_average_precision.recall import Recall
-from mean_average_precision.average_precision import compute_average_precision
+
 import numpy as np
 
+from metrics.classify import Classify
+from metrics.precision import Precision
+from metrics.recall import Recall
 
-class MeanAveragePrecision:
+
+class Metrics:
 
     def __init__(self):
         self._ground_truth_counter_per_class = defaultdict(lambda: 0)
@@ -41,13 +42,16 @@ class MeanAveragePrecision:
 
         self._detections += detections
 
+    def compute_accuracy(self):
+
+        return 0
+
     def compute_average_precision_for_classes(self):
         """
         computes mAP and returns a dictionary containing all classes mAP scores
 
         :return:
         """
-
         average_precision_for_classes = {}
 
         for class_id in self._unique_class_ids:
@@ -58,7 +62,35 @@ class MeanAveragePrecision:
 
             precision = Precision.compute(detections_for_class)
             recall = Recall.compute(detections_for_class, number_of_ground_truth_objects_for_class)
-            average_precision_for_class = compute_average_precision(recall=recall, precision=precision)
+            average_precision_for_class = Metrics.compute_average_precision(recall=recall, precision=precision)
 
             average_precision_for_classes[f"{class_id}"] = average_precision_for_class
         return average_precision_for_classes
+
+    @staticmethod
+    def compute_average_precision(recall, precision):
+        """ Compute the average precision, given the recall and precision curves.
+        Code originally from https://github.com/rbgirshick/py-faster-rcnn.
+
+        # Arguments
+            recall:    The recall curve (list).
+            precision: The precision curve (list).
+        # Returns
+            The average precision as computed in py-faster-rcnn.
+        """
+        # correct AP calculation
+        # first append sentinel values at the end
+        mrec = np.concatenate(([0.0], recall, [1.0]))
+        mpre = np.concatenate(([0.0], precision, [0.0]))
+
+        # compute the precision envelope
+        for i in range(mpre.size - 1, 0, -1):
+            mpre[i - 1] = np.maximum(mpre[i - 1], mpre[i])
+
+        # to calculate area under PR curve, look for points
+        # where X axis (recall) changes value
+        i = np.where(mrec[1:] != mrec[:-1])[0]
+
+        # and sum (\Delta recall) * prec
+        ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
+        return ap

@@ -7,11 +7,13 @@ from yolo.utils import plot
 from yolo.utils import xywh2xyxy
 import os
 from pprint import pprint
+from pprint import pformat
+import numpy as np
 
-from mean_average_precision.ground_truth import GroundTruth
-from mean_average_precision.detection import Detection
-from mean_average_precision.bounding_box import BoundingBox
-from mean_average_precision.mAP import MeanAveragePrecision
+from metrics.ground_truth import GroundTruth
+from metrics.detection import Detection
+from metrics.bounding_box import BoundingBox
+from metrics.metrics import Metrics
 
 logger = logging.getLogger(__name__)
 
@@ -51,15 +53,12 @@ def evaluate(model,
              lambda_no_obj=0.5,
              limit=None,
              debug=False):
-    mAP = MeanAveragePrecision()
+    metrics = Metrics()
 
     model.eval()
     with torch.no_grad():
         data_loader = DataLoader(ya_yolo_dataset, batch_size=ya_yolo_dataset.batch_size, shuffle=False)
-        batch_size = ya_yolo_dataset.batch_size
         class_names = model.class_names
-
-        running_loss = 0.0
 
         for batch_i, (images, annotations, image_paths) in enumerate(data_loader):
             print(batch_i)
@@ -80,14 +79,15 @@ def evaluate(model,
             ground_truth_map_objects = list(to_mAP_ground_truths(image_paths, ground_truth_boxes))
             detection_map_objects = list(to_mAP_detections(image_paths, detections))
 
-            mAP.add_detections_for_batch(detection_map_objects, ground_truth_map_objects)
+            metrics.add_detections_for_batch(detection_map_objects, ground_truth_map_objects)
 
             if limit is not None and batch_i >= limit:
                 logger.info(f"Stop evaluation here after {batch_i} batches")
-                average_precision_for_classes = mAP.compute_average_precision_for_classes()
+                break
 
-                average_precision_for_classes = [(class_names[int(item[0])], item[1]) for item in
-                                                 average_precision_for_classes.items()]
-
-                pprint(sorted(average_precision_for_classes, key=lambda kv: kv[1], reverse=True))
-                return
+    average_precision_for_classes = metrics.compute_average_precision_for_classes()
+    average_precision_for_classes = [(class_names[int(item[0])], item[1]) for item in
+                                     average_precision_for_classes.items()]
+    mean_average_precision = np.mean([item[1] for item in average_precision_for_classes])
+    logger.info(f'mAP: {mean_average_precision}\n')
+    logging.info('\n{}'.format(pformat(sorted(average_precision_for_classes, key=lambda kv: kv[1], reverse=True))))

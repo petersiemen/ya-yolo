@@ -1,4 +1,4 @@
-from mean_average_precision.classify import Classification
+from metrics.classify import Classification
 import numpy as np
 
 

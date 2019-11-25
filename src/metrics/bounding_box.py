@@ -1,4 +1,4 @@
-from mean_average_precision.utils import xywh2xyxy
+from metrics.utils import xywh2xyxy
 
 
 class BoundingBox:
