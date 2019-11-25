@@ -13,18 +13,20 @@ torchvision = "*"
 numpy = "*"
 pillow = "*"
 tqdm = "*"
-#onnx-coreml = "*"
-onnx-coreml = {git = 'https://github.com/onnx/onnx-coreml.git',ref = 'master',editable = true}
-#onnxmltools = "*"
-onnxmltools = {git = 'https://github.com/onnx/onnx-coreml.git',ref = 'master',editable = true}
 netron = "*"
-coremltools = "*"
-#coremltools = {git= 'https://github.com/apple/coremltools.git', ref = 'master', editable = true}
 nltk = "*"
 cython = "*"
-pycocotools = "*"
 tensorboard = "*"
+pycocotools = "*"
+#mAP = {git = 'https://github.com/petersiemen/mAP.git',ref = 'master',editable = true}
+onnx-coreml = {git = 'https://github.com/onnx/onnx-coreml.git',ref = 'master',editable = true}
+##onnxmltools = "*"
+##onnxmltools = {git = 'https://github.com/onnx/onnx-coreml.git',ref = 'master',editable = true}
+coremltools = "*"
+#coremltools = {git= 'https://github.com/apple/coremltools.git', ref = 'master', editable = true}
+##
 terminaltables = "*"
+#
 
 [requires]
 python_version = "3.6"

@@ -20,5 +20,4 @@ from yolo.layers import *
 from yolo.yolo_builder import *
 from yolo.helpers import *
 from yolo.convert import *
-from yolo.mAP import *
 from file_writer import FileWriter

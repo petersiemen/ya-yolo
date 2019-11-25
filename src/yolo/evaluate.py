@@ -3,10 +3,45 @@ from torch.utils.data import DataLoader
 from device import DEVICE
 from logging_config import *
 from yolo.utils import non_max_suppression
-from yolo.utils import get_batch_statistics
+from yolo.utils import plot
+from yolo.utils import xywh2xyxy
+import os
+from pprint import pprint
 
+from mean_average_precision.ground_truth import GroundTruth
+from mean_average_precision.detection import Detection
+from mean_average_precision.bounding_box import BoundingBox
+from mean_average_precision.mAP import MeanAveragePrecision
 
 logger = logging.getLogger(__name__)
+
+
+def _image_path_to_image_id(image_path):
+    return os.path.basename(image_path).split('.jpg', 1)[0]
+
+
+def to_mAP_detections(image_paths, detections):
+    batch_size = len(detections)
+    for image_i in range(batch_size):
+        image_id = _image_path_to_image_id(image_paths[image_i])
+        for detection in detections[image_i]:
+            detection = detection.detach().numpy()
+            confidence = detection[4] * detection[5]
+            yield Detection(file_id=image_id, class_id=int(detection[-1]), confidence=confidence,
+                            bounding_box=BoundingBox.from_xywh(
+                                x=detection[0], y=detection[1], w=detection[2], h=detection[3]
+                            ))
+
+
+def to_mAP_ground_truths(image_paths, ground_truths):
+    batch_size = ground_truths.size(0)
+    for image_i in range(batch_size):
+        image_id = _image_path_to_image_id(image_paths[image_i])
+        for ground_truth in ground_truths[image_i]:
+            ground_truth = ground_truth.detach().numpy()
+            yield GroundTruth(file_id=image_id, class_id=int(ground_truth[-1]), bounding_box=BoundingBox.from_xywh(
+                x=ground_truth[0], y=ground_truth[1], w=ground_truth[2], h=ground_truth[3]
+            ))
 
 
 def evaluate(model,
@@ -16,6 +51,8 @@ def evaluate(model,
              lambda_no_obj=0.5,
              limit=None,
              debug=False):
+    mAP = MeanAveragePrecision()
+
     model.eval()
     with torch.no_grad():
         data_loader = DataLoader(ya_yolo_dataset, batch_size=ya_yolo_dataset.batch_size, shuffle=False)
@@ -37,10 +74,20 @@ def evaluate(model,
                                              conf_thres=0.5,
                                              nms_thres=0.5)
 
+            if debug:
+                plot(ground_truth_boxes.cpu(), images, class_names, True)
 
-            get_batch_statistics(detections, ground_truth_boxes, 0.9)
-            print(detections)
+            ground_truth_map_objects = list(to_mAP_ground_truths(image_paths, ground_truth_boxes))
+            detection_map_objects = list(to_mAP_detections(image_paths, detections))
+
+            mAP.add_detections_for_batch(detection_map_objects, ground_truth_map_objects)
 
             if limit is not None and batch_i >= limit:
                 logger.info(f"Stop evaluation here after {batch_i} batches")
+                average_precision_for_classes = mAP.compute_average_precision_for_classes()
+
+                average_precision_for_classes = [(class_names[int(item[0])], item[1]) for item in
+                                                 average_precision_for_classes.items()]
+
+                pprint(sorted(average_precision_for_classes, key=lambda kv: kv[1], reverse=True))
                 return

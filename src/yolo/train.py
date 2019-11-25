@@ -7,14 +7,11 @@ from torchvision.transforms import ToPILImage
 from device import DEVICE
 from yolo.loss import YoloLoss
 from yolo.utils import boxes_iou_for_single_boxes
-from yolo.utils import plot_boxes
+from yolo.utils import plot_boxes, plot
 from logging_config import *
 
 logger = logging.getLogger(__name__)
 
-to_pil_image = transforms.Compose([
-    ToPILImage()
-])
 
 
 def get_indices_for_center_of_bounding_boxes(num_anchors, grid_widths, x, y):
@@ -65,13 +62,7 @@ def get_indices_for_highest_iou_with_ground_truth_bounding_box(indices, ground_t
     return torch.tensor(indices_for_batch).to(DEVICE)
 
 
-def plot(ground_truth_boxes, images, classnames, plot_labels):
-    batch_size = len(ground_truth_boxes)
-    for b_i in range(batch_size):
-        pil_image = to_pil_image(images[b_i].cpu())
-        boxes = ground_truth_boxes[b_i]
 
-        plot_boxes(pil_image, boxes, classnames, plot_labels)
 
 
 def to_plottable_boxes(obj_mask, coordinates, class_scores, confidence):
