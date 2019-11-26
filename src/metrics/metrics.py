@@ -65,7 +65,10 @@ class Metrics:
             average_precision_for_class = Metrics.compute_average_precision(recall=recall, precision=precision)
 
             average_precision_for_classes[f"{class_id}"] = average_precision_for_class
-        return average_precision_for_classes
+
+        mAP = np.mean(list(average_precision_for_classes.values()))
+
+        return average_precision_for_classes, mAP
 
     @staticmethod
     def compute_average_precision(recall, precision):

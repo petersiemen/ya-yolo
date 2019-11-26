@@ -109,3 +109,4 @@ venv.bak/
 cfg/yolov3.weights
 *.pt
 runs
+/tests/map-inputs/

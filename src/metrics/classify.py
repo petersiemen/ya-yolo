@@ -21,6 +21,9 @@ class Classify:
         :return:  classification, 'unused' ground_truths
         """
         classification = Classification.FALSE_POSITIVE
+        if len(ground_truths) == 0:
+            return classification, ground_truths
+
 
         ious = iou(detection, ground_truths)
         high_enough_ious = ious >= iou_threshold

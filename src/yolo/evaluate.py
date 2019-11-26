@@ -14,6 +14,10 @@ from metrics.ground_truth import GroundTruth
 from metrics.detection import Detection
 from metrics.bounding_box import BoundingBox
 from metrics.metrics import Metrics
+from metrics.utils import *
+from tqdm import tqdm
+
+import matplotlib.pyplot as plt
 
 logger = logging.getLogger(__name__)
 
@@ -49,8 +53,7 @@ def to_mAP_ground_truths(image_paths, ground_truths):
 def evaluate(model,
              ya_yolo_dataset,
              summary_writer,
-             lambda_coord=5,
-             lambda_no_obj=0.5,
+             log_every=None,
              limit=None,
              debug=False):
     metrics = Metrics()
@@ -60,9 +63,8 @@ def evaluate(model,
         data_loader = DataLoader(ya_yolo_dataset, batch_size=ya_yolo_dataset.batch_size, shuffle=False)
         class_names = model.class_names
 
-        for batch_i, (images, annotations, image_paths) in enumerate(data_loader):
-            print(batch_i)
-
+        total = limit if limit is not None else len(data_loader)
+        for batch_i, (images, annotations, image_paths) in tqdm(enumerate(data_loader), total=total):
             images = images.to(DEVICE)
             ground_truth_boxes = ya_yolo_dataset.get_ground_truth_boxes(annotations).to(DEVICE)
 
@@ -85,9 +87,19 @@ def evaluate(model,
                 logger.info(f"Stop evaluation here after {batch_i} batches")
                 break
 
-    average_precision_for_classes = metrics.compute_average_precision_for_classes()
-    average_precision_for_classes = [(class_names[int(item[0])], item[1]) for item in
-                                     average_precision_for_classes.items()]
-    mean_average_precision = np.mean([item[1] for item in average_precision_for_classes])
-    logger.info(f'mAP: {mean_average_precision}\n')
-    logging.info('\n{}'.format(pformat(sorted(average_precision_for_classes, key=lambda kv: kv[1], reverse=True))))
+            if batch_i != 0 and batch_i % log_every == 0:
+                log_average_precision_for_classes(metrics, class_names, summary_writer, batch_i)
+
+        log_average_precision_for_classes(metrics, class_names, summary_writer, total)
+
+
+def log_average_precision_for_classes(metrics, class_names, summary_writer, global_step):
+    average_precision_for_classes, mAP = metrics.compute_average_precision_for_classes()
+    average_precision_for_classes = dict([('{} ({})'.format(class_names[int(k)], int(k)), v) for k, v in
+                                          average_precision_for_classes.items()])
+
+    logger.info(f'mAP: {mAP}\n')
+    logging.info(
+        '\n{}'.format(pformat(sorted(average_precision_for_classes.items(), key=lambda kv: kv[1], reverse=True))))
+
+    plot_average_precision_on_tensorboard(average_precision_for_classes, mAP, summary_writer, global_step)
