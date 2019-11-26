@@ -58,6 +58,7 @@ def evaluate(model,
              debug=False):
     metrics = Metrics()
 
+    model.to(DEVICE)
     model.eval()
     with torch.no_grad():
         data_loader = DataLoader(ya_yolo_dataset, batch_size=ya_yolo_dataset.batch_size, shuffle=False)
@@ -66,7 +67,7 @@ def evaluate(model,
         total = limit if limit is not None else len(data_loader)
         for batch_i, (images, annotations, image_paths) in tqdm(enumerate(data_loader), total=total):
             images = images.to(DEVICE)
-            ground_truth_boxes = ya_yolo_dataset.get_ground_truth_boxes(annotations).to(DEVICE)
+            ground_truth_boxes = ya_yolo_dataset.get_ground_truth_boxes(annotations)
 
             coordinates, class_scores, confidence = model(images)
             prediction = torch.cat((coordinates, confidence.unsqueeze(-1), class_scores), -1)
