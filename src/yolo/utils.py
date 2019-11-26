@@ -486,15 +486,12 @@ def non_max_suppression(prediction, conf_thres=0.5, nms_thres=0.5):
         # If none are remaining => process next image
         if not image_pred.size(0):
             continue
-        # Object confidence times class confidence (the model outputs class confidences as unprocessed scores - no sigmoid -
-        # because we use them to compute classification loss with BCEWithLogitsLoss for numerical stability.
-        # Hence we neeed to apply the sigmoid here to the class predictions
-        score = image_pred[:, 4] * torch.sigmoid(image_pred[:, 5:].max(1)[0])
-        # Sort by it
-        image_pred = image_pred[(-score).argsort()]
+
+        det_conf = image_pred[:, 4]
+        # Sort by detection confidence
+        image_pred = image_pred[(-det_conf).argsort()]
         class_confs, class_preds = image_pred[:, 5:].max(1, keepdim=True)
 
-        # same as above
         class_confs = torch.sigmoid(class_confs)
         detections = torch.cat((image_pred[:, :5], class_confs.float(), class_preds.float()), 1)
         # Perform non-maximum suppression

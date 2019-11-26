@@ -93,7 +93,7 @@ def evaluate(model,
                 logger.info(f"Stop evaluation here after {batch_i} batches")
                 break
 
-            if batch_i != 0 and batch_i % log_every == 0:
+            if batch_i != 0 and log_every is not None and batch_i % log_every == 0:
                 log_average_precision_for_classes(metrics, class_names, summary_writer, batch_i)
 
         log_average_precision_for_classes(metrics, class_names, summary_writer, total)
