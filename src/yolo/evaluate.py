@@ -31,7 +31,7 @@ def to_mAP_detections(image_paths, detections):
     for image_i in range(batch_size):
         image_id = _image_path_to_image_id(image_paths[image_i])
         for detection in detections[image_i]:
-            detection = detection.detach().numpy()
+            detection = detection.detach().cpu().numpy()
             confidence = detection[4] * detection[5]
             yield Detection(file_id=image_id, class_id=int(detection[-1]), confidence=confidence,
                             bounding_box=BoundingBox.from_xywh(
