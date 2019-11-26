@@ -9,7 +9,7 @@ from datasets.simple_car_dataset import SimpleCarDataset
 from device import DEVICE
 from logging_config import *
 from yolo.detect import detect_and_process
-from yolo.mAP import MeanAveragePrecisionHelper
+from yolo.mean_average_precision_helper import MeanAveragePrecisionHelper
 from yolo.yolo import Yolo
 
 logger = logging.getLogger(__name__)

@@ -29,14 +29,14 @@ class YaYoloCocoDataset(YaYoloDataset, CocoDetection):
             for o_i in range(len(annotations)):
                 bbox_coordinates = annotations[o_i]['bbox']
                 if b_i < len(bbox_coordinates[0]):
-                    x = bbox_coordinates[0][b_i]
-                    y = bbox_coordinates[1][b_i]
-                    w = bbox_coordinates[2][b_i]
-                    h = bbox_coordinates[3][b_i]
+                    x = bbox_coordinates[0][b_i].to(dtype=torch.float)
+                    y = bbox_coordinates[1][b_i].to(dtype=torch.float)
+                    w = bbox_coordinates[2][b_i].to(dtype=torch.float)
+                    h = bbox_coordinates[3][b_i].to(dtype=torch.float)
                     annotated_category_id = int(annotations[o_i]['category_id'][b_i].item())
                     category_id = self.annotated_to_detected_class_idx[annotated_category_id]
 
-                    box = [x, y, w, h, 1, 1, category_id, 1]
+                    box = [x, y, w, h, 1, 1, category_id]
                     boxes_for_image.append(box)
 
             boxes_for_batch.append(boxes_for_image)

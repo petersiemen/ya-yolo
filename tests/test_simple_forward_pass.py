@@ -24,12 +24,16 @@ def test_forward_yolo():
     images, _ = image_and_target_transform(image, {})
     images = images.unsqueeze(0)
 
-    coordinates, class_score, confidence = yolo(images)
+    coordinates, class_scores, confidence = yolo(images)
+    prediction = torch.cat((coordinates, confidence.unsqueeze(-1), class_scores), -1)
+    detections = non_max_suppression(prediction=prediction,
+                                     conf_thres=0.9,
+                                     nms_thres=0.5)
     for b_i in range(coordinates.size(0)):
-        boxes = nms_for_coordinates_and_class_scores_and_confidence(coordinates[b_i],
-                                                                    class_score[b_i],
-                                                                    confidence[b_i],
-                                                                    0.5, 0.9)
+        boxes = detections[b_i].detach()
+        if len(boxes) > 0:
+            boxes[..., :4] = xyxy2xywh(boxes[..., :4])
+
         print(boxes)
-        pil_image = to_pil_image(images[0])
+        pil_image = to_pil_image(images[b_i])
         plot_boxes(pil_image, boxes, class_names, True)

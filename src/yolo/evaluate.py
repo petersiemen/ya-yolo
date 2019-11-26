@@ -1,0 +1,105 @@
+import torch
+from torch.utils.data import DataLoader
+from device import DEVICE
+from logging_config import *
+from yolo.utils import non_max_suppression
+from yolo.utils import plot
+from yolo.utils import xywh2xyxy
+import os
+from pprint import pprint
+from pprint import pformat
+import numpy as np
+
+from metrics.ground_truth import GroundTruth
+from metrics.detection import Detection
+from metrics.bounding_box import BoundingBox
+from metrics.metrics import Metrics
+from metrics.utils import *
+from tqdm import tqdm
+
+import matplotlib.pyplot as plt
+
+logger = logging.getLogger(__name__)
+
+
+def _image_path_to_image_id(image_path):
+    return os.path.basename(image_path).split('.jpg', 1)[0]
+
+
+def to_mAP_detections(image_paths, detections):
+    batch_size = len(detections)
+    for image_i in range(batch_size):
+        image_id = _image_path_to_image_id(image_paths[image_i])
+        for detection in detections[image_i]:
+            detection = detection.detach().numpy()
+            confidence = detection[4] * detection[5]
+            yield Detection(file_id=image_id, class_id=int(detection[-1]), confidence=confidence,
+                            bounding_box=BoundingBox.from_xywh(
+                                x=detection[0], y=detection[1], w=detection[2], h=detection[3]
+                            ))
+
+
+def to_mAP_ground_truths(image_paths, ground_truths):
+    batch_size = ground_truths.size(0)
+    for image_i in range(batch_size):
+        image_id = _image_path_to_image_id(image_paths[image_i])
+        for ground_truth in ground_truths[image_i]:
+            ground_truth = ground_truth.detach().numpy()
+            yield GroundTruth(file_id=image_id, class_id=int(ground_truth[-1]), bounding_box=BoundingBox.from_xywh(
+                x=ground_truth[0], y=ground_truth[1], w=ground_truth[2], h=ground_truth[3]
+            ))
+
+
+def evaluate(model,
+             ya_yolo_dataset,
+             summary_writer,
+             log_every=None,
+             limit=None,
+             debug=False):
+    metrics = Metrics()
+
+    model.eval()
+    with torch.no_grad():
+        data_loader = DataLoader(ya_yolo_dataset, batch_size=ya_yolo_dataset.batch_size, shuffle=False)
+        class_names = model.class_names
+
+        total = limit if limit is not None else len(data_loader)
+        for batch_i, (images, annotations, image_paths) in tqdm(enumerate(data_loader), total=total):
+            images = images.to(DEVICE)
+            ground_truth_boxes = ya_yolo_dataset.get_ground_truth_boxes(annotations).to(DEVICE)
+
+            coordinates, class_scores, confidence = model(images)
+            prediction = torch.cat((coordinates, confidence.unsqueeze(-1), class_scores), -1)
+
+            detections = non_max_suppression(prediction=prediction,
+                                             conf_thres=0.5,
+                                             nms_thres=0.5)
+
+            if debug:
+                plot(ground_truth_boxes.cpu(), images, class_names, True)
+
+            ground_truth_map_objects = list(to_mAP_ground_truths(image_paths, ground_truth_boxes))
+            detection_map_objects = list(to_mAP_detections(image_paths, detections))
+
+            metrics.add_detections_for_batch(detection_map_objects, ground_truth_map_objects)
+
+            if limit is not None and batch_i >= limit:
+                logger.info(f"Stop evaluation here after {batch_i} batches")
+                break
+
+            if batch_i != 0 and batch_i % log_every == 0:
+                log_average_precision_for_classes(metrics, class_names, summary_writer, batch_i)
+
+        log_average_precision_for_classes(metrics, class_names, summary_writer, total)
+
+
+def log_average_precision_for_classes(metrics, class_names, summary_writer, global_step):
+    average_precision_for_classes, mAP = metrics.compute_average_precision_for_classes()
+    average_precision_for_classes = dict([('{} ({})'.format(class_names[int(k)], int(k)), v) for k, v in
+                                          average_precision_for_classes.items()])
+
+    logger.info(f'mAP: {mAP}\n')
+    logging.info(
+        '\n{}'.format(pformat(sorted(average_precision_for_classes.items(), key=lambda kv: kv[1], reverse=True))))
+
+    plot_average_precision_on_tensorboard(average_precision_for_classes, mAP, summary_writer, global_step)

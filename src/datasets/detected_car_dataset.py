@@ -175,7 +175,7 @@ class DetectedCarDataset(YaYoloCustomDataset):
                     # annotated_category_id = int(annotations[o_i]['category_id'][b_i].item())
                     # category_id = self.annotated_to_detected_class_idx[annotated_category_id]
                     category_id = self._get_category_id()
-                    box = [x, y, w, h, 1, 1, category_id, 1]
+                    box = [x, y, w, h, 1, 1, category_id]
                     boxes_for_image.append(box)
 
             boxes_for_batch.append(boxes_for_image)

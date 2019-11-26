@@ -13,11 +13,14 @@ from exif import load_image_file
 from yolo.yolo import *
 from yolo.utils import *
 from yolo.detect import *
-from yolo.training import *
+from yolo.train import *
+from yolo.evaluate import *
 from yolo.loss import *
 from yolo.layers import *
 from yolo.yolo_builder import *
 from yolo.helpers import *
+from metrics.utils import *
+
 from yolo.convert import *
-from yolo.mAP import *
 from file_writer import FileWriter
+from metrics.classify import *

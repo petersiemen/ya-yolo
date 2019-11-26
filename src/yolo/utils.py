@@ -2,6 +2,12 @@ import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from torchvision import transforms
+from torchvision.transforms import ToPILImage
+
+to_pil_image = transforms.Compose([
+    ToPILImage()
+])
 
 
 def parse_cfg(cfg_file):
@@ -166,6 +172,15 @@ def load_class_names(namesfile):
     return class_names
 
 
+def plot(ground_truth_boxes, images, classnames, plot_labels):
+    batch_size = len(ground_truth_boxes)
+    for b_i in range(batch_size):
+        pil_image = to_pil_image(images[b_i].cpu())
+        boxes = ground_truth_boxes[b_i]
+
+        plot_boxes(pil_image, boxes, classnames, plot_labels)
+
+
 def plot_boxes(img, boxes, class_names, plot_labels, color=None):
     """
     :param img: PIL image
@@ -179,8 +194,6 @@ def plot_boxes(img, boxes, class_names, plot_labels, color=None):
     :param color:
     :return:
     """
-
-    print("plotting  {} for image".format(len(boxes)))
 
     # Define a tensor used to set the colors of the bounding boxes
     colors = torch.FloatTensor([[1, 0, 1], [0, 0, 1], [0, 1, 1], [0, 1, 0], [1, 1, 0], [1, 0, 0]])
@@ -451,7 +464,7 @@ def bbox_iou(box1, box2, x1y1x2y2=True):
     return iou
 
 
-def non_max_suppression(prediction, conf_thres=0.9, nms_thres=0.5):
+def non_max_suppression(prediction, conf_thres=0.5, nms_thres=0.5):
     """
     Removes detections with lower object confidence score than 'conf_thres' and performs
     Non-Maximum Suppression to further filter detections.
@@ -473,11 +486,16 @@ def non_max_suppression(prediction, conf_thres=0.9, nms_thres=0.5):
         # If none are remaining => process next image
         if not image_pred.size(0):
             continue
-        # Object confidence times class confidence
-        score = image_pred[:, 4] * image_pred[:, 5:].max(1)[0]
+        # Object confidence times class confidence (the model outputs class confidences as unprocessed scores - no sigmoid -
+        # because we use them to compute classification loss with BCEWithLogitsLoss for numerical stability.
+        # Hence we neeed to apply the sigmoid here to the class predictions
+        score = image_pred[:, 4] * torch.sigmoid(image_pred[:, 5:].max(1)[0])
         # Sort by it
         image_pred = image_pred[(-score).argsort()]
         class_confs, class_preds = image_pred[:, 5:].max(1, keepdim=True)
+
+        # same as above
+        class_confs = torch.sigmoid(class_confs)
         detections = torch.cat((image_pred[:, :5], class_confs.float(), class_preds.float()), 1)
         # Perform non-maximum suppression
         keep_boxes = []
@@ -487,7 +505,11 @@ def non_max_suppression(prediction, conf_thres=0.9, nms_thres=0.5):
             # Indices of boxes with lower confidence scores, large IOUs and matching labels
             invalid = large_overlap & label_match
             weights = detections[invalid, 4:5]
+
             # Merge overlapping bboxes by order of confidence
+            # FIXME I am not sure if this is really the right thing to do here but I keep it for now
+            # A problem may arise when porting the model. We need to implmenent the same merge operation in
+            # the nms code that will be executed on the output of our model
             detections[0, :4] = (weights * detections[invalid, :4]).sum(0) / weights.sum()
             keep_boxes += [detections[0]]
             detections = detections[~invalid]
