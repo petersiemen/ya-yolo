@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 HERE = os.path.dirname(os.path.realpath(__file__))
 
 
-def evaluate_coco(image_dir, annotations_file, batch_size, log_every, limit, debug):
+def evaluate_coco(image_dir, annotations_file, batch_size, conf_thresh, log_every, limit, debug):
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
     namesfile = os.path.join(HERE, '../cfg/coco.names')
@@ -36,6 +36,7 @@ def evaluate_coco(image_dir, annotations_file, batch_size, log_every, limit, deb
 
     summary_writer = SummaryWriter(comment=f' evaluate={batch_size}')
     evaluate(model, ya_yolo_dataset, summary_writer,
+             conf_thresh=conf_thresh,
              log_every=log_every,
              limit=limit,
              debug=debug)
@@ -50,6 +51,11 @@ def run():
 
     parser.add_argument("-a", "--annotations-file", dest="annotations_file",
                         help="location of annotations file", metavar="FILE")
+
+    parser.add_argument("-c", "--confidence-thresh", dest="conf_thresh",
+                        type=float,
+                        default=0.5,
+                        help="confidence threshold used in nms", metavar="FILE")
 
     parser.add_argument("-b", "--batch-size", dest="batch_size",
                         type=int,
@@ -71,11 +77,6 @@ def run():
                         default=0.5,
                         help="iou threshold for non maximum suppression (default: 0.6)")
 
-    parser.add_argument("-p", "--objectness-thresh", dest="objectness_thresh",
-                        type=float,
-                        default=0.9,
-                        help="objectness threshold for non maximum surpresssion (default: 0.9)")
-
     parser.add_argument("-d", "--debug", help="plot during detection",
                         action="store_true")
 
@@ -89,11 +90,10 @@ def run():
         batch_size = args.batch_size
         log_every = args.log_every
         limit = args.limit
-        iou_thresh = args.iou_thresh
-        objectness_thresh = args.objectness_thresh
+        conf_thresh = args.conf_thresh
         debug = args.debug
 
-        evaluate_coco(images_dir, annotations_file, batch_size, log_every, limit, debug)
+        evaluate_coco(images_dir, annotations_file, batch_size, conf_thresh, log_every, limit, debug)
 
         sys.exit(0)
 

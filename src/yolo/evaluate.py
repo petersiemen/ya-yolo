@@ -53,6 +53,7 @@ def to_mAP_ground_truths(image_paths, ground_truths):
 def evaluate(model,
              ya_yolo_dataset,
              summary_writer,
+             conf_thresh,
              log_every=None,
              limit=None,
              debug=False):
@@ -78,7 +79,7 @@ def evaluate(model,
             prediction = torch.cat((coordinates, confidence.unsqueeze(-1), class_scores), -1)
 
             detections = non_max_suppression(prediction=prediction,
-                                             conf_thres=0.5,
+                                             conf_thres=conf_thresh,
                                              nms_thres=0.5)
 
             if debug:

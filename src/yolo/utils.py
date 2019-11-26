@@ -507,7 +507,7 @@ def non_max_suppression(prediction, conf_thres=0.5, nms_thres=0.5):
             # FIXME I am not sure if this is really the right thing to do here but I keep it for now
             # A problem may arise when porting the model. We need to implmenent the same merge operation in
             # the nms code that will be executed on the output of our model
-            detections[0, :4] = (weights * detections[invalid, :4]).sum(0) / weights.sum()
+            #detections[0, :4] = (weights * detections[invalid, :4]).sum(0) / weights.sum()
             keep_boxes += [detections[0]]
             detections = detections[~invalid]
         if keep_boxes:
