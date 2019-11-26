@@ -66,6 +66,11 @@ def evaluate(model,
 
         total = limit if limit is not None else len(data_loader)
         for batch_i, (images, annotations, image_paths) in tqdm(enumerate(data_loader), total=total):
+            if len(images) != ya_yolo_dataset.batch_size:
+                logger.warning(
+                    f'batch {batch_i} does not contain {ya_yolo_dataset.batch_size} training samples. skipping this batch')
+                continue
+
             images = images.to(DEVICE)
             ground_truth_boxes = ya_yolo_dataset.get_ground_truth_boxes(annotations)
 
