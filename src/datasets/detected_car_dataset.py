@@ -1,13 +1,14 @@
 from shutil import copyfile
-
 import torch
-
 from datasets.yayolo_dataset import YaYoloDataset
 from exif import load_image_file
 from yolo.plotting import *
 from yolo.utils import non_max_suppression
+import os
+from logging_config import *
 
 logger = logging.getLogger(__name__)
+HERE = os.path.dirname(os.path.realpath(__file__))
 
 
 class DetectedCarDatasetHelper():
@@ -141,7 +142,7 @@ class DetectedCarDataset(YaYoloDataset):
     def __len__(self):
         return len(self.annotations)
 
-    def _get_category_id(self):
+    def _get_class_id(self, annotations, b_i):
         return 1
 
     def get_ground_truth_boxes(self, annotations):
@@ -158,7 +159,7 @@ class DetectedCarDataset(YaYoloDataset):
                     h = bbox_coordinates[3][b_i]
                     # annotated_category_id = int(annotations[o_i]['category_id'][b_i].item())
                     # category_id = self.annotated_to_detected_class_idx[annotated_category_id]
-                    category_id = self._get_category_id()
+                    category_id = self._get_class_id(annotations, b_i)
                     box = [x, y, w, h, 1, 1, category_id]
                     boxes_for_image.append(box)
 
@@ -169,6 +170,14 @@ class DetectedCarDataset(YaYoloDataset):
 
 
 class DetectedCareMakeDataset(DetectedCarDataset):
+    def __init__(self, json_file, transforms, batch_size):
+        super(DetectedCareMakeDataset, self).__init__(json_file, transforms, batch_size)
+        with open(os.path.join(HERE, 'car-makes.csv')) as f:
+            self._class_names = [make.strip() for make in f.readlines()]
 
-    def _get_category_id(self):
-        return 23
+    def _get_class_id(self, annotations, b_i):
+        assert len(
+            annotations) == 1, "DetectedCareMakeDataset can only operate on images labels with exactly one annoation. Found {}".format(
+            len(annotations))
+        make = annotations[0]['make'][b_i]
+        return self._class_names.index(make)

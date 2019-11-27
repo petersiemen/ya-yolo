@@ -1,5 +1,4 @@
 import matplotlib.patches as patches
-import matplotlib.pyplot as plt
 from torchvision import transforms
 from torchvision.transforms import ToPILImage
 

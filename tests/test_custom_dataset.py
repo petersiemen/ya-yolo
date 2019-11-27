@@ -88,8 +88,6 @@ def test_detected_car_make_dataset():
 
         ground_truth_boxes = dataset.get_ground_truth_boxes(annotations)
 
-
-
-        plot_batch(None, ground_truth_boxes, images, None)
+        plot_batch(None, ground_truth_boxes, images, dataset._class_names)
         if batch_i > limit:
             break
