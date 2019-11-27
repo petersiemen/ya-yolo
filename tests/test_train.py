@@ -38,15 +38,14 @@ def test_training():
 
     summary_writer = SummaryWriter(comment=f' batch_size={batch_size} lr={lr}')
 
-
     train(model=model, ya_yolo_dataset=ya_yolo_dataset, model_dir=model_dir,
-             summary_writer=summary_writer,
-             lambda_coord=5,
-             lambda_no_obj=0.5,
-             epochs=1,
-             lr=lr,
-             limit=1,
-             debug=True)
+          summary_writer=summary_writer,
+          lambda_coord=5,
+          lambda_no_obj=0.5,
+          epochs=1,
+          lr=lr,
+          limit=1,
+          debug=True)
 
     summary_writer.close()
 
@@ -87,11 +86,10 @@ def test_training_without_annotations():
 
     summary_writer = SummaryWriter(comment=f' batch_size={batch_size} lr={lr}')
     train(model=model, ya_yolo_dataset=ya_yolo_dataset, model_dir=model_dir,
-             summary_writer=summary_writer,
-             lambda_coord=5,
-             lambda_no_obj=0.5,
-             epochs=1,
-             lr=lr,
-             limit=1,
-             debug=True)
-
+          summary_writer=summary_writer,
+          lambda_coord=5,
+          lambda_no_obj=0.5,
+          epochs=1,
+          lr=lr,
+          limit=1,
+          debug=True)
