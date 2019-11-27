@@ -1,23 +1,15 @@
-import os
-import math
 from shutil import copyfile
 
 import torch
-from torchvision.transforms import ToPILImage
-from torchvision.transforms import transforms
 
-from logging_config import *
-from yolo.utils import plot_boxes, non_max_suppression, xyxy2xywh
+from yolo.plotting import *
+from yolo.utils import non_max_suppression, xyxy2xywh
 
 logger = logging.getLogger(__name__)
 
-to_pil_image = transforms.Compose([
-    ToPILImage()
-])
-
 
 class MeanAveragePrecisionHelper():
-    def __init__(self, out_dir, class_names, image_size, get_ground_thruth_boxes, iou_thresh, objectness_thresh,
+    def __init__(self, out_dir, class_names, image_size, get_ground_thruth_boxes, conf_thres, nms_thres,
                  batch_size, keep_images=False,
                  plot=False):
         self.detection_results_dir = os.path.join(out_dir, "detection-results")
@@ -28,8 +20,9 @@ class MeanAveragePrecisionHelper():
         self.class_names = class_names
         self.image_size = image_size
         self.get_ground_truth_boxes = get_ground_thruth_boxes
-        self.iou_thresh = iou_thresh
-        self.objectness_thresh = objectness_thresh
+        self.conf_thres = conf_thres
+        self.nms_thres = nms_thres
+
         self.batch_size = batch_size
         self.plot = plot
 
@@ -47,21 +40,20 @@ class MeanAveragePrecisionHelper():
         prediction = torch.cat((coordinates, confidence.unsqueeze(-1), class_scores), -1)
 
         detections = non_max_suppression(prediction=prediction,
-                                         conf_thres=self.objectness_thresh,
-                                         nms_thres=self.iou_thresh
+                                         conf_thres=self.conf_thres,
+                                         nms_thres=self.nms_thres
                                          )
+
+        plot_batch(detections, ground_truth_boxes, images, self.class_names)
 
         detected = 0
         for b_i in range(self.batch_size):
             boxes = detections[b_i]
             num_detected_objects = len(boxes)
             detected += num_detected_objects
+
             if num_detected_objects > 0:
                 boxes[..., :4] = xyxy2xywh(boxes[..., :4])
-
-            if self.plot:
-                pil_image = to_pil_image(images[b_i])
-                plot_boxes(pil_image, boxes, self.class_names, True)
 
             ground_truth = ground_truth_boxes[b_i]
             image_path = image_paths[b_i]

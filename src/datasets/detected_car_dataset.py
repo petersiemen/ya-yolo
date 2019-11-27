@@ -1,31 +1,21 @@
-import json
-import os
 from shutil import copyfile
 
 import torch
-from torchvision.transforms import ToPILImage
-from torchvision.transforms import transforms
 
 from datasets.yayolo_custom_dataset import YaYoloCustomDataset
 from exif import load_image_file
-from logging_config import *
+from yolo.plotting import *
 from yolo.utils import non_max_suppression
-from yolo.plotting import plot_batch
-from yolo.utils import xyxy2xywh
 
 logger = logging.getLogger(__name__)
 
-to_pil_image = transforms.Compose([
-    ToPILImage()
-])
-
 
 class DetectedCarDatasetHelper():
-    def __init__(self, car_dataset_writer, class_names, iou_thresh, objectness_thresh, batch_size, debug):
+    def __init__(self, car_dataset_writer, class_names, conf_thres, nms_thres, batch_size, debug):
         self.car_dataset_writer = car_dataset_writer
         self.class_names = class_names
-        self.iou_thresh = iou_thresh
-        self.objectness_thresh = objectness_thresh
+        self.conf_thres = conf_thres
+        self.nms_thres = nms_thres
         self.debug = debug
         self.batch_size = batch_size
 
@@ -41,28 +31,17 @@ class DetectedCarDatasetHelper():
         prediction = torch.cat((coordinates, confidence.unsqueeze(-1), class_scores), -1)
 
         detections = non_max_suppression(prediction=prediction,
-                                         conf_thres=self.objectness_thresh,
-                                         nms_thres=self.iou_thresh
+                                         conf_thres=self.conf_thres,
+                                         nms_thres=self.nms_thres
                                          )
+        if self.debug:
+            plot_batch(detections, None, images, None)
+
         detected = 0
         for b_i in range(self.batch_size):
 
-            # if self.debug:
-            #     plot_batch(
-            #         detections,
-            #         ground_truth_boxes, images, class_names)
-
-
             image_path = image_paths[b_i]
             boxes = detections[b_i]
-            if len(boxes) > 0:
-                boxes[..., :4] = xyxy2xywh(boxes[..., :4])
-
-            # if self.debug:
-            #     pil_image = to_pil_image(images[b_i].cpu())
-            #     plot_boxes(pil_image, boxes,
-            #
-            #                self.class_names, True)
 
             num_detected_cars = len([box for box in boxes if box[6] == 2])
 

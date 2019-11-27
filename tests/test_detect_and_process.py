@@ -42,8 +42,8 @@ def test_detect_and_process_for_detected_car_dataset():
             car_dataset_writer = DetectedCarDatasetWriter(detected_dataset_images_dir, file_writer)
             detected_dataset_helper = DetectedCarDatasetHelper(car_dataset_writer=car_dataset_writer,
                                                                class_names=model.class_names,
-                                                               iou_thresh=0.5,
-                                                               objectness_thresh=0.9,
+                                                               conf_thres=0.9,
+                                                               nms_thres=0.5,
                                                                batch_size=batch_size,
                                                                debug=True)
             detect_and_process(model=model,
@@ -83,8 +83,8 @@ def test_detect_process_for_map_computation():
                                 transforms=image_and_target_transform,
                                 batch_size=batch_size)
 
-    iou_thresh = 0.5
-    objectness_thresh = 0.1
+    conf_thres = 0.01
+    nms_thres = 0.5
     with torch.no_grad():
 
         model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size)
@@ -94,8 +94,8 @@ def test_detect_process_for_map_computation():
                                                class_names=model.class_names,
                                                image_size=image_size,
                                                get_ground_thruth_boxes=dataset.get_ground_truth_boxes,
-                                               iou_thresh=iou_thresh,
-                                               objectness_thresh=objectness_thresh,
+                                               conf_thres=conf_thres,
+                                               nms_thres=nms_thres,
                                                batch_size=batch_size,
                                                keep_images=True,
                                                plot=True

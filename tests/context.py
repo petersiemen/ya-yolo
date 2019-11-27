@@ -19,8 +19,11 @@ from yolo.loss import *
 from yolo.layers import *
 from yolo.yolo_builder import *
 from yolo.helpers import *
-from metrics.utils import *
 from yolo.plotting import *
+from metrics.utils import *
+from metrics.mean_average_precision_helper import *
+
+
 
 from yolo.convert import *
 from file_writer import FileWriter
