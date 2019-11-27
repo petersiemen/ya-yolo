@@ -2,7 +2,7 @@ from shutil import copyfile
 
 import torch
 
-from datasets.yayolo_custom_dataset import YaYoloCustomDataset
+from datasets.yayolo_dataset import YaYoloDataset
 from exif import load_image_file
 from yolo.plotting import *
 from yolo.utils import non_max_suppression
@@ -29,7 +29,6 @@ class DetectedCarDatasetHelper():
                            ):
 
         prediction = torch.cat((coordinates, confidence.unsqueeze(-1), class_scores), -1)
-
         detections = non_max_suppression(prediction=prediction,
                                          conf_thres=self.conf_thres,
                                          nms_thres=self.nms_thres
@@ -56,6 +55,9 @@ class DetectedCarDatasetHelper():
                 self.car_dataset_writer.append(image_path=copied_image_path,
                                                make=annotations[0]['make'][b_i],
                                                model=annotations[0]['model'][b_i],
+                                               price=annotations[0]['price'][b_i].item(),
+                                               date_of_first_registration=annotations[0]['date_of_first_registration'][
+                                                   b_i].item(),
                                                bounding_box=bounding_box)
             elif num_detected_cars > 1:
                 logger.info("Detected more than 1 car on the image. ({})".format(image_path))
@@ -76,11 +78,13 @@ class DetectedCarDatasetWriter():
         copyfile(image_path, to_path)
         return to_path
 
-    def append(self, image_path, make, model, bounding_box):
+    def append(self, image_path, make, model, price, date_of_first_registration, bounding_box):
         self.file_writer.append(
             json.dumps({'image': image_path,
                         'make': make,
                         'model': model,
+                        'price': price,
+                        'date_of_first_registration': date_of_first_registration,
                         'bbox': [bounding_box['x'],
                                  bounding_box['y'],
                                  bounding_box['w'],
@@ -92,7 +96,7 @@ class DetectedCarDatasetWriter():
         return 'DetectedSimpleCarDatasetWriter({}, {})'.format(self.images_dir, self.file_writer.fd.name)
 
 
-class DetectedCarDataset(YaYoloCustomDataset):
+class DetectedCarDataset(YaYoloDataset):
 
     def __init__(self, json_file, transforms, batch_size):
         """
@@ -115,14 +119,6 @@ class DetectedCarDataset(YaYoloCustomDataset):
 
                 self.image_paths.append(obj['image'])
                 self.annotations.append([obj])
-
-        self.makes = tuple(set([car[0]['make'] for car in self.annotations]))
-        self.int_to_make = dict(enumerate(self.makes))
-        self.makes_to_int = {make: idx for idx, make in self.int_to_make.items()}
-
-        self.model = tuple(set([car[0]['make'] + "__" + car[0]['model'] for car in self.annotations]))
-        self.int_to_model = dict(enumerate(self.model))
-        self.models_to_int = {model: idx for idx, model in self.int_to_model.items()}
 
     def __getitem__(self, index):
         """
@@ -170,3 +166,9 @@ class DetectedCarDataset(YaYoloCustomDataset):
 
         ground_truth_boxes = torch.tensor(boxes_for_batch)
         return ground_truth_boxes
+
+
+class DetectedCareMakeDataset(DetectedCarDataset):
+
+    def _get_category_id(self):
+        return 23

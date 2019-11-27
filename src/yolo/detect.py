@@ -14,14 +14,10 @@ def detect_and_process(model,
                        ya_yolo_dataset,
                        processor,
                        limit=None,
-                       skip=None,
-                       iou_thresh=0.5,
-                       objectness_thresh=0.9,
+                       skip=None
                        ):
     logging.info(
-        'start object detection run. Using iou_thresh {} and objectness_thresh {}'.format(
-            iou_thresh,
-            objectness_thresh))
+        'start object detection run with processor'.format(processor))
 
     batch_size = ya_yolo_dataset.batch_size
     data_loader = DataLoader(ya_yolo_dataset, batch_size=ya_yolo_dataset.batch_size, shuffle=False)

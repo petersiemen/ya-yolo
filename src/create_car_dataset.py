@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 HERE = os.path.dirname(os.path.realpath(__file__))
 
 
-def run_detect_cars(in_dir, out_dir, batch_size, limit, iou_thresh, objectness_thresh, debug):
+def run_detect_cars(in_dir, out_dir, batch_size, limit, conf_thres, nms_thres, debug):
     assert os.path.isdir(out_dir), "directory {} does not exist".format(out_dir)
 
     now = datetime.datetime.now()
@@ -55,8 +55,8 @@ def run_detect_cars(in_dir, out_dir, batch_size, limit, iou_thresh, objectness_t
 
             detected_dataset_helper = DetectedCarDatasetHelper(car_dataset_writer=car_dataset_writer,
                                                                class_names=model.class_names,
-                                                               iou_thresh=iou_thresh,
-                                                               objectness_thresh=objectness_thresh,
+                                                               conf_thres=conf_thres,
+                                                               nms_thres=nms_thres,
                                                                batch_size=batch_size,
                                                                debug=debug)
             cnt = detect_and_process(model=model,
@@ -87,15 +87,15 @@ def run():
                         default=None,
                         help="limit the size of the to be generated dataset (default: None)")
 
-    parser.add_argument("-t", "--iou-thresh", dest="iou_thresh",
-                        type=float,
-                        default=0.5,
-                        help="iou threshold for non maximum suppression (default: 0.6)")
-
-    parser.add_argument("-p", "--objectness-thresh", dest="objectness_thresh",
+    parser.add_argument("-c", "--conf-thres", dest="conf_thres",
                         type=float,
                         default=0.9,
-                        help="objectness threshold for non maximum surpresssion (default: 0.9)")
+                        help="objectness confidence threshold(default: 0.9)")
+
+    parser.add_argument("-n", "--nms-thres", dest="nms_thres",
+                        type=float,
+                        default=0.5,
+                        help="nms (iou) threshold for non maximum suppression (default: 0.5)")
 
     parser.add_argument("-d", "--debug", help="plot during detection",
                         action="store_true")
@@ -109,11 +109,12 @@ def run():
         out_dir = args.out_dir
         batch_size = args.batch_size
         limit = args.limit
-        iou_thresh = args.iou_thresh
-        objectness_thresh = args.objectness_thresh
+        conf_thres = args.conf_thres
+        nms_thres = args.nms_thres
+
         debug = args.debug
 
-        run_detect_cars(in_dir, out_dir, batch_size, limit, iou_thresh, objectness_thresh, debug)
+        run_detect_cars(in_dir, out_dir, batch_size, limit, conf_thres, nms_thres, debug)
 
         sys.exit(0)
 

@@ -27,6 +27,7 @@ def test_forward_yolo():
     images = images.unsqueeze(0)
 
     coordinates, class_scores, confidence = yolo(images)
+    class_scores = torch.nn.Softmax(dim=2)(class_scores)
     prediction = torch.cat((coordinates, confidence.unsqueeze(-1), class_scores), -1)
     detections = non_max_suppression(prediction=prediction,
                                      conf_thres=0.9,

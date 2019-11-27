@@ -80,6 +80,13 @@ def evaluate(model,
             ground_truth_boxes = ya_yolo_dataset.get_ground_truth_boxes(annotations)
 
             coordinates, class_scores, confidence = model(images)
+
+            # converting the class scores into a probability distribution
+            # this only has an effect on how what probability we 'plot' into the resulting images for
+            # debugging
+            # the nms function below will just pick the maximum class score
+            class_scores = torch.nn.Softmax(dim=2)(class_scores)
+
             prediction = torch.cat((coordinates, confidence.unsqueeze(-1), class_scores), -1)
 
             detections = non_max_suppression(prediction=prediction,

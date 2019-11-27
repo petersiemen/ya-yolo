@@ -38,7 +38,7 @@ def test_evaluate():
 
     evaluate(model, ya_yolo_dataset, summary_writer, images_result_dir,
              iou_thres=0.5,
-             conf_thres=0.01,
+             conf_thres=0.9,
              nms_thres=0.5,
              log_every=1,
              limit=6,

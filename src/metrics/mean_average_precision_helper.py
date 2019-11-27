@@ -36,7 +36,6 @@ class MeanAveragePrecisionHelper():
                            ):
 
         ground_truth_boxes = self.get_ground_truth_boxes(annotations)
-
         prediction = torch.cat((coordinates, confidence.unsqueeze(-1), class_scores), -1)
 
         detections = non_max_suppression(prediction=prediction,
