@@ -107,8 +107,8 @@ def _plot_rect_on_fig(a, box, color, class_names, width, height, gt=False):
 
     # Define x and y offsets for the labels
     lxc = (width * 0.266) / 100
-    lyc = (height * 1.180) / 100
+    lyc = (height * 1.580) / 100
 
     # Draw the labels on top of the image
     a.text(x1 + lxc, y1 - lyc, conf_tx, fontsize=10, color='k',
-           bbox=dict(facecolor=color, edgecolor=color, alpha=0.8))
+           bbox=dict(facecolor=color, edgecolor=color, alpha=0.6))

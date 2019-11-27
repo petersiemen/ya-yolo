@@ -7,6 +7,7 @@ from metrics.precision import Precision
 from metrics.recall import Recall
 
 
+
 class Metrics:
 
     def __init__(self):
@@ -68,7 +69,7 @@ class Metrics:
 
         mAP = np.mean(list(average_precision_for_classes.values()))
 
-        return average_precision_for_classes, mAP
+        return average_precision_for_classes, mAP, self._ground_truth_counter_per_class
 
     @staticmethod
     def compute_average_precision(recall, precision):

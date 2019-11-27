@@ -114,9 +114,11 @@ def evaluate(model,
 
 
 def log_average_precision_for_classes(metrics, class_names, summary_writer, global_step):
-    average_precision_for_classes, mAP = metrics.compute_average_precision_for_classes()
-    average_precision_for_classes = dict([('{} ({})'.format(class_names[int(k)], int(k)), v) for k, v in
-                                          average_precision_for_classes.items()])
+    average_precision_for_classes, mAP, ground_truth_objects_for_classes = metrics.compute_average_precision_for_classes()
+    average_precision_for_classes = dict([('{} (id: {}, #gt:{} )'.format(
+        class_names[int(k)], int(k),
+        ground_truth_objects_for_classes[int(k)]), v) for k, v in
+        average_precision_for_classes.items()])
 
     logger.info(f'mAP: {mAP}\n')
     logging.info(
