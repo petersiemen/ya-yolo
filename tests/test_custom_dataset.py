@@ -41,10 +41,6 @@ def test_detected_car_dataset():
         CocoToTensor()
     ])
 
-    to_pil_image = transforms.Compose([
-        ToPILImage()
-    ])
-
     batch_size = 2
     dataset = DetectedCarDataset(json_file=os.path.join(HERE, 'resources/cars.json'),
                                  transforms=image_and_target_transform, batch_size=batch_size)
@@ -54,18 +50,17 @@ def test_detected_car_dataset():
 
     for batch_i, (images, annotations, _) in enumerate(data_loader):
 
+        if len(images) != batch_size:
+            print("skipping batch {}. Size {} does not equal expected batch size {}".format(batch_i, len(images),
+                                                                                            batch_size))
+            continue
+
         ground_truth_boxes = dataset.get_ground_truth_boxes(annotations)
-        for b_i in range(images.shape[0]):
-            image = images[b_i]
 
-            make = annotations[0]['make'][b_i]
-            boxes = ground_truth_boxes[b_i]
-
-            pil_image = to_pil_image(image)
-            plot_boxes(pil_image, boxes, [], False)
-            # plt.imshow(pil_image)
-            # print(make)
-            # plt.show()
-
+        plot_batch(None, ground_truth_boxes, images, None)
         if batch_i > limit:
             break
+
+
+def test_voc_dataset():
+    pass

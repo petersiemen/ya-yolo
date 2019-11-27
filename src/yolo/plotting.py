@@ -15,11 +15,17 @@ to_pil_image = transforms.Compose([
 
 def _process_batch(detections_for_batch, ground_truth_boxes_for_batch, images, class_names, processor,
                    image_paths=None):
-    batch_size = len(ground_truth_boxes_for_batch)
+    batch_size = len(images)
     for b_i in range(batch_size):
         pil_image = to_pil_image(images[b_i].cpu())
-        detections_for_image = detections_for_batch[b_i]
-        ground_truth_boxes_for_image = ground_truth_boxes_for_batch[b_i]
+        if detections_for_batch is not None:
+            detections_for_image = detections_for_batch[b_i]
+        else:
+            detections_for_image = []
+        if ground_truth_boxes_for_batch is not None:
+            ground_truth_boxes_for_image = ground_truth_boxes_for_batch[b_i]
+        else:
+            ground_truth_boxes_for_image = []
 
         fig, a = _create_fig_from_pil_image(pil_image, detections_for_image, ground_truth_boxes_for_image, class_names)
         if image_paths is not None:
@@ -81,8 +87,6 @@ def _plot_rect_on_fig(a, box, color, class_names, width, height, gt=False):
     det_conf = box[4]
     cls_conf = box[5]
     cls_id = box[6]
-    classes = len(class_names)
-    offset = cls_id * 123457 % classes
 
     # Calculate the width and height of the bounding box relative to the size of the image.
     width_x = x2 - x1
@@ -101,7 +105,10 @@ def _plot_rect_on_fig(a, box, color, class_names, width, height, gt=False):
 
     # Create a string with the object class name and the corresponding object class probability
     gt_string = ' (gt)' if gt else ''
-    conf_tx = class_names[int(cls_id)] + gt_string + ', det_conf: {:.1f}'.format(
+    class_name = '{} (id: {})'.format(class_names[int(cls_id)], int(cls_id)) if class_names is not None else '{}'.format(
+        int(cls_id))
+
+    conf_tx = class_name + gt_string + ', det_conf: {:.1f}'.format(
         det_conf) + ' / cls_conf:{:.1f}'.format(
         cls_conf)
 

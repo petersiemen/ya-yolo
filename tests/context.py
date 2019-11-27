@@ -20,6 +20,7 @@ from yolo.layers import *
 from yolo.yolo_builder import *
 from yolo.helpers import *
 from metrics.utils import *
+from yolo.plotting import *
 
 from yolo.convert import *
 from file_writer import FileWriter

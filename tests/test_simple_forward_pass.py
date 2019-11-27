@@ -8,10 +8,12 @@ def test_forward_yolo():
         SquashResize(416),
         CocoToTensor()
     ])
-
-    to_pil_image = transforms.Compose([
-        ToPILImage()
-    ])
+    # for b_i in range(coordinates.size(0)):
+    #     boxes = detections[b_i].detach()
+    #
+    #     print(boxes)
+    #     pil_image = to_pil_image(images[b_i])
+    #     plot_boxes(pil_image, boxes, boxes, class_names)
 
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
@@ -29,9 +31,4 @@ def test_forward_yolo():
     detections = non_max_suppression(prediction=prediction,
                                      conf_thres=0.9,
                                      nms_thres=0.5)
-    for b_i in range(coordinates.size(0)):
-        boxes = detections[b_i].detach()
-
-        print(boxes)
-        pil_image = to_pil_image(images[b_i])
-        plot_boxes(pil_image, boxes, boxes, class_names)
+    plot_batch(detections, None, images, class_names)

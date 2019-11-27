@@ -6,8 +6,6 @@ from PIL import Image
 
 from datasets.yayolo_dataset import YaYoloDataset
 
-HERE = os.path.dirname(os.path.realpath(__file__))
-
 
 class YaYoloCocoDataset(YaYoloDataset, CocoDetection):
 
@@ -20,7 +18,6 @@ class YaYoloCocoDataset(YaYoloDataset, CocoDetection):
         self.annotated_to_detected_class_idx = {k: i for i, (k, v)
                                                 in enumerate(self.coco.cats.items())}
         self.batch_size = batch_size
-
 
     def get_ground_truth_boxes(self, annotations):
         boxes_for_batch = []
