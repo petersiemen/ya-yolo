@@ -1,23 +1,19 @@
+from pprint import pformat
+
 import torch
 from torch.utils.data import DataLoader
-from device import DEVICE
-from logging_config import *
-from yolo.utils import non_max_suppression
-from yolo.utils import plot
-from yolo.utils import xywh2xyxy
-import os
-from pprint import pprint
-from pprint import pformat
-import numpy as np
-
-from metrics.ground_truth import GroundTruth
-from metrics.detection import Detection
-from metrics.bounding_box import BoundingBox
-from metrics.metrics import Metrics
-from metrics.utils import *
 from tqdm import tqdm
 
-import matplotlib.pyplot as plt
+from device import DEVICE
+from logging_config import *
+from metrics.bounding_box import BoundingBox
+from metrics.detection import Detection
+from metrics.ground_truth import GroundTruth
+from metrics.metrics import Metrics
+from metrics.utils import *
+from yolo.plotting import plot_batch, save_batch
+from yolo.utils import dir_exists_and_is_empty
+from yolo.utils import non_max_suppression
 
 logger = logging.getLogger(__name__)
 
@@ -53,16 +49,22 @@ def to_mAP_ground_truths(image_paths, ground_truths):
 def evaluate(model,
              ya_yolo_dataset,
              summary_writer,
+             images_results_dir,
              conf_thresh,
              log_every=None,
              limit=None,
-             debug=False):
+             plot=False,
+             save=False):
+    assert dir_exists_and_is_empty(images_results_dir), f'{images_results_dir} is not empty or does not exist.'
+
+    logger.info(f'Start evaluating model with conf_thres {conf_thresh}')
+
     metrics = Metrics()
 
     model.to(DEVICE)
     model.eval()
     with torch.no_grad():
-        data_loader = DataLoader(ya_yolo_dataset, batch_size=ya_yolo_dataset.batch_size, shuffle=False)
+        data_loader = DataLoader(ya_yolo_dataset, batch_size=ya_yolo_dataset.batch_size, shuffle=True)
         class_names = model.class_names
 
         total = limit if limit is not None else len(data_loader)
@@ -82,8 +84,17 @@ def evaluate(model,
                                              conf_thres=conf_thresh,
                                              nms_thres=0.5)
 
-            if debug:
-                plot(ground_truth_boxes.cpu(), images, class_names, True)
+            if plot:
+                plot_batch(
+                    detections,
+                    ground_truth_boxes, images, class_names)
+
+            if save:
+                save_batch(
+                    image_paths,
+                    images_results_dir,
+                    detections,
+                    ground_truth_boxes, images, class_names)
 
             ground_truth_map_objects = list(to_mAP_ground_truths(image_paths, ground_truth_boxes))
             detection_map_objects = list(to_mAP_detections(image_paths, detections))

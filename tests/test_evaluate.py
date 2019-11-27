@@ -28,7 +28,10 @@ def test_evaluate():
                                         batch_size=batch_size)
 
     summary_writer = SummaryWriter(comment=f' evaluate={batch_size}')
-
-    evaluate(model, ya_yolo_dataset, summary_writer,
+    images_result_dir = os.path.join(HERE, 'output/evaluated')
+    evaluate(model, ya_yolo_dataset, summary_writer, images_result_dir,
+             conf_thresh=0.7,
+             log_every=1,
              limit=2,
-             debug=True)
+             plot=True,
+             save=True)

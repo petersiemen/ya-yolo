@@ -7,7 +7,7 @@ from torchvision.transforms import ToPILImage
 from device import DEVICE
 from yolo.loss import YoloLoss
 from yolo.utils import boxes_iou_for_single_boxes
-from yolo.utils import plot_boxes, plot
+#from yolo.utils import plot_boxes
 from logging_config import *
 
 logger = logging.getLogger(__name__)
@@ -172,10 +172,10 @@ def train(model,
             if debug:
                 logger.info('processing batch {} with {} annotated objects per image ...'.format(batch_i + 1,
                                                                                                  num_of_boxes_in_image_in_batch))
-                plot(ground_truth_boxes.cpu(), images, class_names, True)
-                plot(
-                    to_plottable_boxes(obj_mask, coordinates, class_scores, confidence),
-                    images, class_names, True)
+                # plot(ground_truth_boxes.cpu(), images, class_names, True)
+                # plot(
+                #     to_plottable_boxes(obj_mask, coordinates, class_scores, confidence),
+                #     images, class_names, True)
 
             yolo_loss = YoloLoss(coordinates,
                                  confidence,

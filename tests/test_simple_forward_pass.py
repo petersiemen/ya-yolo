@@ -31,9 +31,7 @@ def test_forward_yolo():
                                      nms_thres=0.5)
     for b_i in range(coordinates.size(0)):
         boxes = detections[b_i].detach()
-        if len(boxes) > 0:
-            boxes[..., :4] = xyxy2xywh(boxes[..., :4])
 
         print(boxes)
         pil_image = to_pil_image(images[b_i])
-        plot_boxes(pil_image, boxes, class_names, True)
+        plot_boxes(pil_image, boxes, boxes, class_names)

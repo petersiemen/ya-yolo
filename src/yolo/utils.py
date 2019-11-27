@@ -4,10 +4,17 @@ import numpy as np
 import torch
 from torchvision import transforms
 from torchvision.transforms import ToPILImage
+import os
+from enum import Enum
 
 to_pil_image = transforms.Compose([
     ToPILImage()
 ])
+
+
+class PlotOrSave(Enum):
+    PLOT = 1
+    SAVE = 2
 
 
 def parse_cfg(cfg_file):
@@ -172,114 +179,87 @@ def load_class_names(namesfile):
     return class_names
 
 
-def plot(ground_truth_boxes, images, classnames, plot_labels):
-    batch_size = len(ground_truth_boxes)
+
+
+def plot_or_save_batch(detections_for_batch, ground_truth_boxes_for_batch, images, classnames, plot_or_save=PlotOrSave.PLOT):
+    batch_size = len(ground_truth_boxes_for_batch)
     for b_i in range(batch_size):
         pil_image = to_pil_image(images[b_i].cpu())
-        boxes = ground_truth_boxes[b_i]
+        detections_for_image = detections_for_batch[b_i]
+        ground_truth_boxes_for_image = ground_truth_boxes_for_batch[b_i]
 
-        plot_boxes(pil_image, boxes, classnames, plot_labels)
+        plot_or_save_boxes(pil_image,
+                           detections_for_image,
+                           ground_truth_boxes_for_image, classnames,
+                           plot_or_save)
 
 
-def plot_boxes(img, boxes, class_names, plot_labels, color=None):
+def plot_or_save_boxes(pil_image, detected_boxes, ground_truth_boxes, class_names, plot_or_save):
     """
-    :param img: PIL image
-    :param boxes:  list of lists of boxes
-
      0  1  2  3  4          5          6
     [x, y, w, h, det_conf,  cls_conf,  cls_id]
-
-    :param class_names:
-    :param plot_labels:
-    :param color:
-    :return:
     """
 
-    # Define a tensor used to set the colors of the bounding boxes
-    colors = torch.FloatTensor([[1, 0, 1], [0, 0, 1], [0, 1, 1], [0, 1, 0], [1, 1, 0], [1, 0, 0]])
-
-    # Define a function to set the colors of the bounding boxes
-    def get_color(c, x, max_val):
-        ratio = float(x) / max_val * 5
-        i = int(np.floor(ratio))
-        j = int(np.ceil(ratio))
-
-        ratio = ratio - i
-        r = (1 - ratio) * colors[i][c] + ratio * colors[j][c]
-
-        return int(r * 255)
-
     # Get the width and height of the image
-    width = img.width
-    height = img.height
+    width = pil_image.width
+    height = pil_image.height
 
     # Create a figure and plot the image
     fig, a = plt.subplots(1, 1)
-    a.imshow(img)
+    a.imshow(pil_image)
 
-    # Plot the bounding boxes and corresponding labels on top of the image
-    for i in range(len(boxes)):
+    for i in range(len(ground_truth_boxes)):
+        _plot_rect_on_fig(a, ground_truth_boxes[i].detach().cpu(), 'green', class_names, width, height)
 
-        # Get the ith bounding box
-        box = boxes[i]
+    for i in range(len(detected_boxes)):
+        _plot_rect_on_fig(a, detected_boxes[i].detach().cpu(), 'blue', class_names, width, height)
 
-        # Get the (x,y) pixel coordinates of the lower-left and lower-right corners
-        # of the bounding box relative to the size of the image.
-        x1 = int(np.around((box[0] - box[2] / 2.0) * width))
-        y1 = int(np.around((box[1] - box[3] / 2.0) * height))
-        x2 = int(np.around((box[0] + box[2] / 2.0) * width))
-        y2 = int(np.around((box[1] + box[3] / 2.0) * height))
-
-        # Set the default rgb value to red
-        rgb = (1, 0, 0)
-
-        # Use the same color to plot the bounding boxes of the same object class
-        if len(box) >= 7 and class_names:
-            det_conf = box[4]
-            cls_conf = box[5]
-            cls_id = box[6]
-            classes = len(class_names)
-            offset = cls_id * 123457 % classes
-            red = get_color(2, offset, classes) / 255
-            green = get_color(1, offset, classes) / 255
-            blue = get_color(0, offset, classes) / 255
-
-            # If a color is given then set rgb to the given color instead
-            if color is None:
-                rgb = (red, green, blue)
-            else:
-                rgb = color
-
-        # Calculate the width and height of the bounding box relative to the size of the image.
-        width_x = x2 - x1
-        width_y = y1 - y2
-
-        # Set the postion and size of the bounding box. (x1, y2) is the pixel coordinate of the
-        # lower-left corner of the bounding box relative to the size of the image.
-        rect = patches.Rectangle((x1, y2),
-                                 width_x, width_y,
-                                 linewidth=2,
-                                 edgecolor=rgb,
-                                 facecolor='none')
-
-        # Draw the bounding box on top of the image
-        a.add_patch(rect)
-
-        # If plot_labels = True then plot the corresponding label
-        if plot_labels:
-            # Create a string with the object class name and the corresponding object class probability
-            conf_tx = class_names[int(cls_id)] + ', det_conf: {:.1f}'.format(det_conf) + ' / cls_conf:{:.1f}'.format(
-                cls_conf)
-
-            # Define x and y offsets for the labels
-            lxc = (width * 0.266) / 100
-            lyc = (height * 1.180) / 100
-
-            # Draw the labels on top of the image
-            a.text(x1 + lxc, y1 - lyc, conf_tx, fontsize=16, color='k',
-                   bbox=dict(facecolor=rgb, edgecolor=rgb, alpha=0.8))
 
     plt.show()
+
+
+def _plot_rect_on_fig(a, box, color, class_names, width, height):
+    # Plot the bounding boxes and corresponding labels on top of the image
+
+    # Get the (x,y) pixel coordinates of the lower-left and lower-right corners
+    # of the bounding box relative to the size of the image.
+    x1 = int(np.around((box[0] - box[2] / 2.0) * width))
+    y1 = int(np.around((box[1] - box[3] / 2.0) * height))
+    x2 = int(np.around((box[0] + box[2] / 2.0) * width))
+    y2 = int(np.around((box[1] + box[3] / 2.0) * height))
+
+    det_conf = box[4]
+    cls_conf = box[5]
+    cls_id = box[6]
+    classes = len(class_names)
+    offset = cls_id * 123457 % classes
+
+    # Calculate the width and height of the bounding box relative to the size of the image.
+    width_x = x2 - x1
+    width_y = y1 - y2
+
+    # Set the postion and size of the bounding box. (x1, y2) is the pixel coordinate of the
+    # lower-left corner of the bounding box relative to the size of the image.
+    rect = patches.Rectangle((x1, y2),
+                             width_x, width_y,
+                             linewidth=2,
+                             edgecolor=color,
+                             facecolor='none')
+
+    # Draw the bounding box on top of the image
+    a.add_patch(rect)
+
+    # Create a string with the object class name and the corresponding object class probability
+    conf_tx = class_names[int(cls_id)] + ', det_conf: {:.1f}'.format(det_conf) + ' / cls_conf:{:.1f}'.format(
+        cls_conf)
+
+    # Define x and y offsets for the labels
+    lxc = (width * 0.266) / 100
+    lyc = (height * 1.180) / 100
+
+    # Draw the labels on top of the image
+    a.text(x1 + lxc, y1 - lyc, conf_tx, fontsize=10, color='k',
+           bbox=dict(facecolor=color, edgecolor=color, alpha=0.8))
 
 
 def boxes_iou_for_single_boxes(box1, box2):
@@ -507,10 +487,15 @@ def non_max_suppression(prediction, conf_thres=0.5, nms_thres=0.5):
             # FIXME I am not sure if this is really the right thing to do here but I keep it for now
             # A problem may arise when porting the model. We need to implmenent the same merge operation in
             # the nms code that will be executed on the output of our model
-            #detections[0, :4] = (weights * detections[invalid, :4]).sum(0) / weights.sum()
+            detections[0, :4] = (weights * detections[invalid, :4]).sum(0) / weights.sum()
+            detections[0, :4] = xyxy2xywh(detections[0, :4])
             keep_boxes += [detections[0]]
             detections = detections[~invalid]
         if keep_boxes:
             output[image_i] = torch.stack(keep_boxes)
 
     return output
+
+
+def dir_exists_and_is_empty(dir):
+    return os.path.isdir(dir) and len(os.listdir(dir)) == 0
