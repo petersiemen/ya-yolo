@@ -54,6 +54,7 @@ def _create_fig_from_pil_image(pil_image, detected_boxes, ground_truth_boxes, cl
 def plot_batch(detections_for_batch, ground_truth_boxes_for_batch, images, classnames):
     def plot_image(fig, a):
         plt.show()
+        plt.close(fig)
 
     _process_batch(detections_for_batch, ground_truth_boxes_for_batch, images, classnames, plot_image)
 
@@ -62,6 +63,7 @@ def save_batch(image_paths, images_results_dir, detections_for_batch, ground_tru
     def save_image(fig, a, image_path):
         full_image_path = os.path.join(images_results_dir, os.path.basename(image_path))
         fig.savefig(full_image_path)
+        plt.close(fig)
 
     _process_batch(detections_for_batch, ground_truth_boxes_for_batch, images, classnames, save_image, image_paths)
 
