@@ -43,7 +43,7 @@ def _create_fig_from_pil_image(pil_image, detected_boxes, ground_truth_boxes, cl
     a.imshow(pil_image)
 
     for i in range(len(ground_truth_boxes)):
-        _plot_rect_on_fig(a, ground_truth_boxes[i].detach().cpu(), 'green', class_names, width, height)
+        _plot_rect_on_fig(a, ground_truth_boxes[i].detach().cpu(), 'green', class_names, width, height, gt=True)
 
     for i in range(len(detected_boxes)):
         _plot_rect_on_fig(a, detected_boxes[i].detach().cpu(), 'blue', class_names, width, height)
@@ -68,7 +68,7 @@ def save_batch(image_paths, images_results_dir, detections_for_batch, ground_tru
     _process_batch(detections_for_batch, ground_truth_boxes_for_batch, images, classnames, save_image, image_paths)
 
 
-def _plot_rect_on_fig(a, box, color, class_names, width, height):
+def _plot_rect_on_fig(a, box, color, class_names, width, height, gt=False):
     # Plot the bounding boxes and corresponding labels on top of the image
 
     # Get the (x,y) pixel coordinates of the lower-left and lower-right corners
@@ -100,7 +100,9 @@ def _plot_rect_on_fig(a, box, color, class_names, width, height):
     a.add_patch(rect)
 
     # Create a string with the object class name and the corresponding object class probability
-    conf_tx = class_names[int(cls_id)] + ', det_conf: {:.1f}'.format(det_conf) + ' / cls_conf:{:.1f}'.format(
+    gt_string = ' (gt)' if gt else ''
+    conf_tx = class_names[int(cls_id)] + gt_string + ', det_conf: {:.1f}'.format(
+        det_conf) + ' / cls_conf:{:.1f}'.format(
         cls_conf)
 
     # Define x and y offsets for the labels

@@ -19,14 +19,14 @@ class Metrics:
             self._ground_truth_counter_per_class[ground_truth.class_id] += 1
             self._unique_class_ids.add(ground_truth.class_id)
 
-    def add_detections_for_batch(self, detections, ground_truths):
+    def add_detections_for_batch(self, detections, ground_truths, iou_thres):
         file_ids = set([d.file_id for d in detections])
         for file_id in file_ids:
             detections_for_image = list(filter(lambda x: x.file_id == file_id, detections))
             ground_truths_for_image = list(filter(lambda x: x.file_id == file_id, ground_truths))
-            self.add_detections_for_image(detections_for_image, ground_truths_for_image)
+            self.add_detections_for_image(detections_for_image, ground_truths_for_image, iou_thres)
 
-    def add_detections_for_image(self, detections, ground_truths):
+    def add_detections_for_image(self, detections, ground_truths, iou_thres):
         """
         :param detections: list of Detection objects
         :param ground_truths: list of GroundTruth objects
@@ -37,7 +37,7 @@ class Metrics:
 
         detections.sort(key=lambda d: d.confidence, reverse=True)
         for detection in detections:
-            classification, ground_truths = Classify.classify(detection, ground_truths)
+            classification, ground_truths = Classify.classify(detection, ground_truths, iou_thres)
             detection.set_classification(classification)
 
         self._detections += detections

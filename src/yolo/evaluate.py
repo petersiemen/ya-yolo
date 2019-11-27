@@ -50,7 +50,7 @@ def evaluate(model,
              ya_yolo_dataset,
              summary_writer,
              images_results_dir,
-             conf_thresh,
+             iou_thres, conf_thres, nms_thres,
              log_every=None,
              limit=None,
              plot=False,
@@ -58,7 +58,8 @@ def evaluate(model,
     if save is not None:
         assert dir_exists_and_is_empty(images_results_dir), f'{images_results_dir} is not empty or does not exist.'
 
-    logger.info(f'Start evaluating model with conf_thres {conf_thresh}')
+    logger.info(
+        f'Start evaluating model with iou_thres: {iou_thres}, conf_thres: {conf_thres} and nms_thres: {nms_thres}')
 
     metrics = Metrics()
 
@@ -82,8 +83,8 @@ def evaluate(model,
             prediction = torch.cat((coordinates, confidence.unsqueeze(-1), class_scores), -1)
 
             detections = non_max_suppression(prediction=prediction,
-                                             conf_thres=conf_thresh,
-                                             nms_thres=0.5)
+                                             conf_thres=conf_thres,
+                                             nms_thres=nms_thres)
 
             if plot:
                 plot_batch(
@@ -100,7 +101,7 @@ def evaluate(model,
             ground_truth_map_objects = list(to_mAP_ground_truths(image_paths, ground_truth_boxes))
             detection_map_objects = list(to_mAP_detections(image_paths, detections))
 
-            metrics.add_detections_for_batch(detection_map_objects, ground_truth_map_objects)
+            metrics.add_detections_for_batch(detection_map_objects, ground_truth_map_objects, iou_thres=iou_thres)
 
             if limit is not None and batch_i >= limit:
                 logger.info(f"Stop evaluation here after {batch_i} batches")

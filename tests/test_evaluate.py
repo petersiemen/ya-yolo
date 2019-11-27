@@ -37,8 +37,10 @@ def test_evaluate():
         os.mkdir(images_result_dir)
 
     evaluate(model, ya_yolo_dataset, summary_writer, images_result_dir,
-             conf_thresh=0.5,
+             iou_thres=0.5,
+             conf_thres=0.01,
+             nms_thres=0.5,
              log_every=1,
-             limit=2,
+             limit=6,
              plot=True,
              save=True)

@@ -265,7 +265,7 @@ class EagerYoloLayer(nn.Module):
         #
         # note: we do not compute the sigmoid on the class_scores here but rather use torch.nn.BCEWithLogitsLoss() since
         # it is numerically more stable than computing sigmoid separately and then using torch.nn.BCELoss()
-        class_scores = output[5:5 + self.num_classes].transpose(0, 1) \
+        class_scores = torch.sigmoid(output[5:5 + self.num_classes]).transpose(0, 1) \
             .view(self.batch_size, self.num_anchors * self.height * self.width,
                   self.num_classes)
 

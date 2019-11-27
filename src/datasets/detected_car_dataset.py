@@ -10,7 +10,7 @@ from datasets.yayolo_custom_dataset import YaYoloCustomDataset
 from exif import load_image_file
 from logging_config import *
 from yolo.utils import non_max_suppression
-#from yolo.utils import plot_boxes
+from yolo.plotting import plot_batch
 from yolo.utils import xyxy2xywh
 
 logger = logging.getLogger(__name__)
@@ -47,10 +47,10 @@ class DetectedCarDatasetHelper():
         detected = 0
         for b_i in range(self.batch_size):
 
-            if self.debug:
-                plot_for_batch(
-                    detections,
-                    ground_truth_boxes, images, class_names)
+            # if self.debug:
+            #     plot_batch(
+            #         detections,
+            #         ground_truth_boxes, images, class_names)
 
 
             image_path = image_paths[b_i]

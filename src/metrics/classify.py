@@ -11,7 +11,7 @@ class Classification(Enum):
 class Classify:
 
     @staticmethod
-    def classify(detection, ground_truths, iou_threshold=0.5):
+    def classify(detection, ground_truths, iou_thres):
         """
         classify detection as TP, FP or FN
 
@@ -26,7 +26,7 @@ class Classify:
 
 
         ious = iou(detection, ground_truths)
-        high_enough_ious = ious >= iou_threshold
+        high_enough_ious = ious >= iou_thres
         matching_class_ids = np.array([detection.class_id == ground_truth.class_id for ground_truth in ground_truths])
 
         matching_ground_truths = np.array(list(zip(ious, ground_truths)))[high_enough_ious & matching_class_ids]
