@@ -4,10 +4,6 @@ HERE = os.path.dirname(os.path.realpath(__file__))
 COCO_IMAGES_DIR = os.path.join(HERE, '../../../datasets/coco-small/cocoapi/images/val2014')
 COCO_ANNOTATIONS_FILE = os.path.join(COCO_IMAGES_DIR, '../../annotations/instances_val2014_10_per_category.json')
 
-to_pil_image = transforms.Compose([
-    ToPILImage()
-])
-
 
 def test_plot_boxes():
     batch_size = 1
@@ -38,10 +34,8 @@ def test_plot_boxes():
                                      conf_thres=0.9,
                                      nms_thres=0.5)
 
-    pil_image = to_pil_image(images[0])
     grund_truth_boxes = ya_yolo_dataset.get_ground_truth_boxes(annotations)
-    plot_boxes(pil_image=pil_image,
-               detected_boxes=detections[0],
-               ground_truth_boxes=grund_truth_boxes[0],
-               class_names=class_names
-               )
+    plot_batch(detections,
+               grund_truth_boxes,
+               images,
+               class_names)

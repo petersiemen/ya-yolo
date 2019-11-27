@@ -34,15 +34,10 @@ def test_save_and_reload():
     detections = non_max_suppression(prediction=prediction,
                                      conf_thres=0.9,
                                      nms_thres=0.5)
-
-    for b_i in range(coordinates.size(0)):
-        boxes = detections[b_i].detach()
-        if len(boxes) > 0:
-            boxes[..., :4] = xyxy2xywh(boxes[..., :4])
-
-        print(boxes)
-        pil_image = to_pil_image(images[0])
-        plot_boxes(pil_image, boxes, class_names, True)
+    plot_batch(detections,
+               None,
+               images,
+               class_names)
 
     coordinates, class_score, confidence = yolo_from_disc(images)
 
@@ -51,11 +46,7 @@ def test_save_and_reload():
                                      conf_thres=0.9,
                                      nms_thres=0.5)
 
-    for b_i in range(coordinates.size(0)):
-        boxes = detections[b_i].detach()
-        if len(boxes) > 0:
-            boxes[..., :4] = xyxy2xywh(boxes[..., :4])
-
-        print(boxes)
-        pil_image = to_pil_image(images[0])
-        plot_boxes(pil_image, boxes, class_names, True)
+    plot_batch(detections,
+               None,
+               images,
+               class_names)
