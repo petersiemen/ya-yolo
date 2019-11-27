@@ -15,7 +15,8 @@ logger = logging.getLogger(__name__)
 HERE = os.path.dirname(os.path.realpath(__file__))
 
 
-def evaluate_coco(image_dir, annotations_file, batch_size, conf_thresh, log_every, limit, plot, save,
+def evaluate_coco(image_dir, annotations_file, batch_size,
+                  conf_thres, log_every, limit, plot, save,
                   images_results_dir):
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
@@ -38,7 +39,9 @@ def evaluate_coco(image_dir, annotations_file, batch_size, conf_thresh, log_ever
     summary_writer = SummaryWriter(comment=f' evaluate={batch_size}')
     evaluate(model, ya_yolo_dataset, summary_writer,
              images_results_dir,
-             conf_thresh=conf_thresh,
+             iou_thres=0.5,
+             conf_thres=conf_thres,
+             nms_thres=0.5,
              log_every=log_every,
              limit=limit,
              plot=plot,
@@ -55,7 +58,7 @@ def run():
     parser.add_argument("-a", "--annotations-file", dest="annotations_file",
                         help="location of annotations file", metavar="FILE")
 
-    parser.add_argument("-c", "--confidence-thresh", dest="conf_thresh",
+    parser.add_argument("-c", "--conf-thres", dest="conf_thres",
                         type=float,
                         default=0.5,
                         help="confidence threshold used in nms", metavar="FILE")
@@ -79,11 +82,6 @@ def run():
                         default=None,
                         help="location where to store the rendered detections and ground-truth boxes on the images")
 
-    parser.add_argument("-t", "--iou-thresh", dest="iou_thresh",
-                        type=float,
-                        default=0.5,
-                        help="iou threshold for non maximum suppression (default: 0.6)")
-
     parser.add_argument("-p", "--plot", help="plot results",
                         action="store_true")
 
@@ -100,12 +98,12 @@ def run():
         batch_size = args.batch_size
         log_every = args.log_every
         limit = args.limit
-        conf_thresh = args.conf_thresh
+        conf_thres = args.conf_thres
         plot = args.plot
         save = args.save
         images_results_dir = args.images_results_dir
 
-        evaluate_coco(images_dir, annotations_file, batch_size, conf_thresh, log_every, limit, plot, save,
+        evaluate_coco(images_dir, annotations_file, batch_size, conf_thres, log_every, limit, plot, save,
                       images_results_dir)
 
         sys.exit(0)
