@@ -55,7 +55,8 @@ def evaluate(model,
              limit=None,
              plot=False,
              save=False):
-    assert dir_exists_and_is_empty(images_results_dir), f'{images_results_dir} is not empty or does not exist.'
+    if save is not None:
+        assert dir_exists_and_is_empty(images_results_dir), f'{images_results_dir} is not empty or does not exist.'
 
     logger.info(f'Start evaluating model with conf_thres {conf_thresh}')
 

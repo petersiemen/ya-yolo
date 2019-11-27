@@ -60,8 +60,7 @@ def plot_batch(detections_for_batch, ground_truth_boxes_for_batch, images, class
 
 def save_batch(image_paths, images_results_dir, detections_for_batch, ground_truth_boxes_for_batch, images, classnames):
     def save_image(fig, a, image_path):
-        full_image_path = os.path.join(images_results_dir, image_path)
-        logger.info(f'saving detection result at {full_image_path}')
+        full_image_path = os.path.join(images_results_dir, os.path.basename(image_path))
         fig.savefig(full_image_path)
 
     _process_batch(detections_for_batch, ground_truth_boxes_for_batch, images, classnames, save_image, image_paths)

@@ -110,3 +110,4 @@ cfg/yolov3.weights
 *.pt
 runs
 /tests/map-inputs/
+results

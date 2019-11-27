@@ -29,8 +29,15 @@ def test_evaluate():
 
     summary_writer = SummaryWriter(comment=f' evaluate={batch_size}')
     images_result_dir = os.path.join(HERE, 'output/evaluated')
+    if os.path.exists(images_result_dir):
+        for f in os.listdir(images_result_dir):
+            file_path = os.path.join(images_result_dir, f)
+            os.unlink(file_path)
+    else:
+        os.mkdir(images_result_dir)
+
     evaluate(model, ya_yolo_dataset, summary_writer, images_result_dir,
-             conf_thresh=0.7,
+             conf_thresh=0.5,
              log_every=1,
              limit=2,
              plot=True,
