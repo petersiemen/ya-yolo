@@ -5,6 +5,9 @@ from yolo.layers import *
 from yolo.utils import load_conv, load_conv_bn
 from yolo.yolo_builder import YoloBuilder
 from yolo.utils import load_class_names
+from logging_config import *
+
+logger = logging.getLogger(__name__)
 
 
 class Yolo(nn.Module):
@@ -21,6 +24,10 @@ class Yolo(nn.Module):
         assert len(tmp) == 1
         self.num_classes = tmp.pop()
         assert self.num_classes == len(self.class_names)
+
+    def set_num_classes(self, num_classes):
+        logger.info(f"Update num_classes from {self.num_classes} to {num_classes}")
+
 
     def save(self, dir, name):
         torch.save(self.state_dict(), os.path.join(dir, name))

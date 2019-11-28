@@ -42,9 +42,12 @@ def test_training():
           summary_writer=summary_writer,
           lambda_coord=5,
           lambda_no_obj=0.5,
+          conf_thres=0.7,
+          nms_thres=0.5,
+          iou_thres=0.5,
           epochs=1,
           lr=lr,
-          limit=1,
+          limit=20,
           debug=True)
 
     summary_writer.close()
@@ -86,6 +89,40 @@ def test_training_without_annotations():
 
     summary_writer = SummaryWriter(comment=f' batch_size={batch_size} lr={lr}')
     train(model=model, ya_yolo_dataset=ya_yolo_dataset, model_dir=model_dir,
+          summary_writer=summary_writer,
+          lambda_coord=5,
+          lambda_no_obj=0.5,
+          epochs=1,
+          lr=lr,
+          limit=1,
+          debug=True)
+
+
+def test_training_car_makes_without_annotations():
+    image_and_target_transform = Compose([
+        SquashResize(416),
+        CocoToTensor()
+    ])
+
+    cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
+    weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
+    namesfile = os.path.join(HERE, '../cfg/coco.names')
+    model_dir = os.path.join(HERE, 'models')
+
+    batch_size = 2
+    lr = 0.001
+    model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size)
+    model.load_weights(weight_file)
+
+    model.set
+
+    dataset = DetectedCareMakeDataset(json_file=os.path.join(HERE, 'resources/cars.json'),
+                                      transforms=image_and_target_transform, batch_size=batch_size)
+
+    summary_writer = SummaryWriter(comment=f' batch_size={batch_size} lr={lr}')
+    train(model=model,
+          ya_yolo_dataset=dataset,
+          model_dir=model_dir,
           summary_writer=summary_writer,
           lambda_coord=5,
           lambda_no_obj=0.5,

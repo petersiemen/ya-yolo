@@ -20,6 +20,12 @@ class YoloLoss():
 
         ]).table
 
+    def capture(self, writer, n_iter, during='train'):
+        writer.add_scalar(f'Localization-Loss/{during}', self.localization_loss.item(), n_iter)
+        writer.add_scalar(f'Objectness-Loss/{during}', self.objectness_loss.item(), n_iter)
+        writer.add_scalar(f'No-objectness-Loss/{during}', self.no_objectness_loss.item(), n_iter)
+        writer.add_scalar(f'Total-Loss/{during}', self.total_loss.item(), n_iter)
+
     def __init__(self,
                  coordinates,
                  confidence,

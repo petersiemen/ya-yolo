@@ -7,7 +7,6 @@ from metrics.precision import Precision
 from metrics.recall import Recall
 
 
-
 class Metrics:
 
     def __init__(self):
@@ -44,10 +43,9 @@ class Metrics:
         self._detections += detections
 
     def compute_accuracy(self):
-
         return 0
 
-    def compute_average_precision_for_classes(self):
+    def compute_average_precision_for_classes(self, class_names=None):
         """
         computes mAP and returns a dictionary containing all classes mAP scores
 
@@ -67,9 +65,15 @@ class Metrics:
 
             average_precision_for_classes[f"{class_id}"] = average_precision_for_class
 
-        mAP = np.mean(list(average_precision_for_classes.values()))
+        mAP = 0 if len(average_precision_for_classes) == 0 else np.mean(list(average_precision_for_classes.values()))
 
-        return average_precision_for_classes, mAP, self._ground_truth_counter_per_class
+        if class_names is not None:
+            average_precision_for_classes = dict([('{} (id: {}, #gt:{} )'.format(
+                class_names[int(k)], int(k),
+                self._ground_truth_counter_per_class[int(k)]), v) for k, v in
+                average_precision_for_classes.items()])
+
+        return average_precision_for_classes, mAP
 
     @staticmethod
     def compute_average_precision(recall, precision):
@@ -98,3 +102,4 @@ class Metrics:
         # and sum (\Delta recall) * prec
         ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
         return ap
+

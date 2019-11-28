@@ -91,3 +91,27 @@ def test_detected_car_make_dataset():
         plot_batch(None, ground_truth_boxes, images, dataset._class_names)
         if batch_i > limit:
             break
+
+
+def test_voc_dataset():
+    image_and_target_transform = Compose([
+        SquashResize(416),
+        CocoToTensor()
+    ])
+    batch_size = 2
+    dataset = YaYoloVocDataset(root_dir='/home/peter/datasets/VOC',
+                               batch_size=batch_size,
+                               transforms=image_and_target_transform)
+
+    dataloader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=False)
+
+    batch_i, (images, annotations, image_paths) = next(enumerate(dataloader))
+    # ground_truth_boxes = dataset.get_ground_truth_boxes(annotations)
+
+    pil_image = to_pil_image(images[0])
+
+    plt.imshow(pil_image)
+    plt.show()
+    pil_image = to_pil_image(images[1])
+    plt.imshow(pil_image)
+    plt.show()

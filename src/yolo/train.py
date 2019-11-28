@@ -1,17 +1,21 @@
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
-from torchvision import transforms
-from torchvision.transforms import ToPILImage
 
 from device import DEVICE
-from yolo.loss import YoloLoss
-from yolo.utils import boxes_iou_for_single_boxes
-#from yolo.utils import plot_boxes
 from logging_config import *
+from yolo.loss import YoloLoss
+from yolo.plotting import plot_batch
+from yolo.utils import boxes_iou_for_single_boxes
+from yolo.utils import non_max_suppression
+from metrics.utils import *
+from metrics.metrics import Metrics
+from metrics.ground_truth import GroundTruth
+from metrics.detection import Detection
+from pprint import pformat
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
-
 
 
 def get_indices_for_center_of_bounding_boxes(num_anchors, grid_widths, x, y):
@@ -60,9 +64,6 @@ def get_indices_for_highest_iou_with_ground_truth_bounding_box(indices, ground_t
             indices_for_image.append(indices[image_i, box_j, max_iou_idx])
         indices_for_batch.append(indices_for_image)
     return torch.tensor(indices_for_batch).to(DEVICE)
-
-
-
 
 
 def to_plottable_boxes(obj_mask, coordinates, class_scores, confidence):
@@ -133,10 +134,19 @@ def train(model,
           lr=0.001,
           lambda_coord=5,
           lambda_no_obj=0.5,
+          conf_thres=0.5,
+          nms_thres=0.5,
+          iou_thres=0.5,
           limit=None,
           debug=False,
           print_every=10):
-    logger.info('Number of images: ', len(ya_yolo_dataset))
+    total = limit if limit is not None else len(ya_yolo_dataset)
+
+    logger.info(
+        f'Start training on {total} images. Using lr: {lr}, '
+        f'lambda_coord: {lambda_coord}, lambda_no_obj: {lambda_no_obj}, '
+        f'conf_thres: {conf_thres}, nms_thres:{nms_thres}, iou_thres: {iou_thres}')
+    metrics = Metrics()
 
     model.to(DEVICE)
     model.train()
@@ -152,7 +162,7 @@ def train(model,
 
         running_loss = 0.0
 
-        for batch_i, (images, annotations, image_paths) in enumerate(data_loader):
+        for batch_i, (images, annotations, image_paths) in tqdm(enumerate(data_loader), total=total):
 
             images = images.to(DEVICE)
             if images.shape[0] != batch_size:
@@ -168,15 +178,6 @@ def train(model,
 
             obj_mask, noobj_mask, cls_mask, target_coordinates, target_confidence, target_class_scores = build_targets(
                 coordinates, class_scores, ground_truth_boxes, grid_sizes)
-
-            if debug:
-                logger.info('processing batch {} with {} annotated objects per image ...'.format(batch_i + 1,
-                                                                                                 num_of_boxes_in_image_in_batch))
-                # plot(ground_truth_boxes.cpu(), images, class_names, True)
-                # plot(
-                #     to_plottable_boxes(obj_mask, coordinates, class_scores, confidence),
-                #     images, class_names, True)
-
             yolo_loss = YoloLoss(coordinates,
                                  confidence,
                                  class_scores,
@@ -190,6 +191,23 @@ def train(model,
                                  lambda_no_obj=lambda_no_obj
                                  )
 
+            prediction = torch.cat((coordinates, confidence.unsqueeze(-1), class_scores), -1)
+            detections = non_max_suppression(prediction=prediction,
+                                             conf_thres=conf_thres,
+                                             nms_thres=nms_thres
+                                             )
+
+            ground_truth_map_objects = list(GroundTruth.from_ground_truths(image_paths, ground_truth_boxes))
+            detection_map_objects = list(Detection.from_detections(image_paths, detections))
+
+            metrics.add_detections_for_batch(detection_map_objects, ground_truth_map_objects, iou_thres=iou_thres)
+
+            if debug:
+                logger.info('processed batch {} with {} annotated objects per image ...'.format(batch_i + 1,
+                                                                                                num_of_boxes_in_image_in_batch))
+
+                plot_batch(detections, ground_truth_boxes, images, class_names)
+
             loss = yolo_loss.get()
 
             # zero the parameter (weight) gradients
@@ -199,21 +217,48 @@ def train(model,
             # update the weights
             optimizer.step()
 
-            # print loss statistics
             # to convert loss into a scalar and add it to the running_loss, use .item()
             running_loss += loss.item() / batch_size
 
-            # summary_writer.add_scalar('Loss/train', running_loss, batch_i)
+            yolo_loss.capture(summary_writer, batch_i, during='train')
             if batch_i % print_every == 0:  # print every print_every +1  batches
-                log_str = "\n---- [Epoch %d/%d, Batch %d/%d] ----\n" % (epoch, epochs, batch_i, len(data_loader))
-                log_str += yolo_loss.print()
-
-                print(log_str)
+                log_performance(epoch, epochs, batch_i, total, yolo_loss, metrics, class_names, summary_writer)
                 running_loss = 0.0
 
             if limit is not None and batch_i + 1 >= limit:
                 logger.info('Stop here after training {} batches (limit: {})'.format(batch_i, limit))
+                log_performance(epoch, epochs, batch_i, total, yolo_loss, metrics, class_names, summary_writer)
+                save_model(model_dir, model, epoch)
                 return
 
-        model.save(model_dir,
-                   'yolo__num_classes_{}__epoch_{}.pt'.format(model.num_classes, epoch))
+        # save model after every epoch
+        save_model(model_dir, model, epoch)
+
+
+def log_performance(epoch, epochs, batch_i, total, yolo_loss, metrics, class_names, summary_writer):
+    log_str = "\n---- [Epoch %d/%d, Batch %d/%d] ----\n" % (epoch, epochs, batch_i, total)
+    log_str += yolo_loss.print()
+    logger.info(log_str)
+    log_average_precision_for_classes(metrics, class_names, summary_writer, epoch * batch_i)
+
+
+def log_average_precision_for_classes(metrics, class_names, summary_writer, global_step):
+    average_precision_for_classes, mAP = metrics.compute_average_precision_for_classes(class_names)
+    logger.info(f'mAP: {mAP}\n')
+
+    if len(average_precision_for_classes) > 0:
+        logging.info(
+            '\n{}'.format(pformat(sorted(average_precision_for_classes.items(), key=lambda kv: kv[1], reverse=True))))
+
+        fig = draw_fig(average_precision_for_classes,
+                       window_title="mAP",
+                       plot_title="mAP = {0:.2f}%".format(mAP * 100),
+                       x_label="Average Precision"
+                       )
+        data = fig_to_numpy(fig)
+        summary_writer.add_image('Average_Precision', data, global_step, dataformats='HWC')
+
+
+def save_model(model_dir, model, epoch):
+    model.save(model_dir,
+               'yolo__num_classes_{}__epoch_{}.pt'.format(model.num_classes, epoch))

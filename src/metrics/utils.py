@@ -1,13 +1,12 @@
-import glob
-import json
-import os
-import shutil
 import operator
-import sys
-import argparse
-import math
-import numpy as np
+import os
+
 import matplotlib.pyplot as plt
+import numpy as np
+
+
+def image_path_to_image_id(image_path):
+    return os.path.basename(image_path).split('.jpg', 1)[0]
 
 
 def xywh2xyxy(x, y, w, h):

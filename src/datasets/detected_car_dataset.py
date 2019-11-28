@@ -175,6 +175,9 @@ class DetectedCareMakeDataset(DetectedCarDataset):
         with open(os.path.join(HERE, 'car-makes.csv')) as f:
             self._class_names = [make.strip() for make in f.readlines()]
 
+    def get_num_classes(self):
+        return len(self._class_names)
+
     def _get_class_id(self, annotations, b_i):
         assert len(
             annotations) == 1, "DetectedCareMakeDataset can only operate on images labels with exactly one annoation. Found {}".format(

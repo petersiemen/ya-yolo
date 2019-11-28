@@ -9,6 +9,7 @@ from datasets.preprocess import *
 from datasets.yayolo_coco_dataset import YaYoloCocoDataset
 from datasets.simple_car_dataset import *
 from datasets.detected_car_dataset import *
+from datasets.yayolo_voc_dataset import *
 from exif import load_image_file
 from yolo.yolo import *
 from yolo.utils import *
