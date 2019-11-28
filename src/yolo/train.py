@@ -130,13 +130,13 @@ def train(model,
           ya_yolo_dataset,
           model_dir,
           summary_writer,
-          epochs=1,
-          lr=0.001,
+          epochs,
+          lr,
+          conf_thres,
+          nms_thres,
+          iou_thres,
           lambda_coord=5,
           lambda_no_obj=0.5,
-          conf_thres=0.5,
-          nms_thres=0.5,
-          iou_thres=0.5,
           limit=None,
           debug=False,
           print_every=10):
@@ -191,7 +191,9 @@ def train(model,
                                  lambda_no_obj=lambda_no_obj
                                  )
 
+            class_scores = torch.sigmoid(class_scores)
             prediction = torch.cat((coordinates, confidence.unsqueeze(-1), class_scores), -1)
+
             detections = non_max_suppression(prediction=prediction,
                                              conf_thres=conf_thres,
                                              nms_thres=nms_thres

@@ -25,9 +25,29 @@ class Yolo(nn.Module):
         self.num_classes = tmp.pop()
         assert self.num_classes == len(self.class_names)
 
+    def set_class_names(self, class_names):
+        self.class_names = class_names
+
     def set_num_classes(self, num_classes):
         logger.info(f"Update num_classes from {self.num_classes} to {num_classes}")
 
+        outchannels_of_conv_layer_as_input_to_yolo = 3 * (num_classes + 5)
+        yolo_indices = [idx for idx, model in enumerate(self.models) if isinstance(model, EagerYoloLayer)]
+
+        for idx in yolo_indices:
+            old = self.models[idx - 1]
+            self.models[idx].num_classes = num_classes
+            self.models[idx].in_channels = outchannels_of_conv_layer_as_input_to_yolo
+            self.models[idx - 1] = ConvolutionalLayer(layer_idx=old.layer_idx,
+                                                      in_channels=old.in_channels,
+                                                      height=old.height,
+                                                      width=old.width,
+                                                      out_channels=outchannels_of_conv_layer_as_input_to_yolo,
+                                                      kernel_size=old.kernel_size,
+                                                      stride=old.stride,
+                                                      padding=old.padding,
+                                                      batch_normalize=old.batch_normalize,
+                                                      activation=old.activation)
 
     def save(self, dir, name):
         torch.save(self.state_dict(), os.path.join(dir, name))

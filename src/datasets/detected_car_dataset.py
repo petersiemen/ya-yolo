@@ -6,6 +6,7 @@ from yolo.plotting import *
 from yolo.utils import non_max_suppression
 import os
 from logging_config import *
+import json
 
 logger = logging.getLogger(__name__)
 HERE = os.path.dirname(os.path.realpath(__file__))
@@ -177,6 +178,9 @@ class DetectedCareMakeDataset(DetectedCarDataset):
 
     def get_num_classes(self):
         return len(self._class_names)
+
+    def get_class_names(self):
+        return self._class_names
 
     def _get_class_id(self, annotations, b_i):
         assert len(

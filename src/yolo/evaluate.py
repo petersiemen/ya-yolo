@@ -57,7 +57,8 @@ def evaluate(model,
             # this only has an effect on how what probability we 'plot' into the resulting images for
             # debugging
             # the nms function below will just pick the maximum class score
-            class_scores = torch.nn.Softmax(dim=2)(class_scores)
+            # class_scores = torch.nn.Softmax(dim=2)(class_scores)
+            class_scores = torch.sigmoid(class_scores)
 
             prediction = torch.cat((coordinates, confidence.unsqueeze(-1), class_scores), -1)
 
@@ -97,6 +98,5 @@ def log_average_precision_for_classes(metrics, class_names, summary_writer, glob
     logger.info(f'mAP: {mAP}\n')
     logging.info(
         '\n{}'.format(pformat(sorted(average_precision_for_classes.items(), key=lambda kv: kv[1], reverse=True))))
-
 
     plot_average_precision_on_tensorboard(average_precision_for_classes, mAP, summary_writer, global_step)

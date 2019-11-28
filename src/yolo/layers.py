@@ -9,6 +9,7 @@ class ConvolutionalLayer(nn.Module):
                  batch_normalize=1,
                  activation=None):
         super(ConvolutionalLayer, self).__init__()
+        self.layer_idx = layer_idx
         self.in_channels = in_channels
         self.height = height
         self.width = width
@@ -17,6 +18,7 @@ class ConvolutionalLayer(nn.Module):
         self.stride = stride
         self.padding = padding
         self.batch_normalize = batch_normalize
+        self.activation = activation
 
         modules = nn.Sequential()
 
@@ -268,6 +270,5 @@ class EagerYoloLayer(nn.Module):
         class_scores = output[5:5 + self.num_classes].transpose(0, 1) \
             .view(self.batch_size, self.num_anchors * self.height * self.width,
                   self.num_classes)
-
 
         return coordinates, class_scores, det_confs.view(self.batch_size, self.num_anchors * self.height * self.width)
