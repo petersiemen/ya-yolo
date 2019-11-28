@@ -24,9 +24,7 @@ onnx-coreml = {git = 'https://github.com/onnx/onnx-coreml.git',ref = 'master',ed
 ##onnxmltools = {git = 'https://github.com/onnx/onnx-coreml.git',ref = 'master',editable = true}
 coremltools = "*"
 #coremltools = {git= 'https://github.com/apple/coremltools.git', ref = 'master', editable = true}
-##
 terminaltables = "*"
-#
 tensorboardcolab = "*"
 
 [requires]
