@@ -70,15 +70,19 @@ class DetectedCarDatasetHelper():
 
 
 class DetectedCarDatasetWriter():
-    def __init__(self, images_dir, file_writer):
-        self.images_dir = images_dir
+    def __init__(self, file_writer):
+        self.images_dir = os.path.join(os.path.dirname(file_writer.file_path), "images")
+        assert os.path.exists(self.images_dir) == False, f"{self.images_dir} must not exist"
+        os.mkdir(self.images_dir)
+
         self.file_writer = file_writer
         logger.info('Init {}.'.format(self))
 
     def copy_image(self, image_path):
-        to_path = os.path.join(self.images_dir, os.path.basename(image_path))
+        basepath = os.path.basename(image_path)
+        to_path = os.path.join(self.images_dir, basepath)
         copyfile(image_path, to_path)
-        return to_path
+        return "images/" + basepath
 
     def append(self, image_path, make, model, price, date_of_first_registration, bounding_box):
         self.file_writer.append(
@@ -111,15 +115,16 @@ class DetectedCarDataset(YaYoloDataset):
         self.batch_size = batch_size
         self.image_paths = []
         self.annotations = []
+        basedir = os.path.dirname(json_file)
         with open(json_file) as f:
             for line in f:
                 obj = json.loads(line)
-                image_path = obj['image']
+                image_path = os.path.join(basedir, obj['image'])
                 if not os.path.exists(image_path):
                     logger.error('image {} does not exist'.format(image_path))
                     continue
 
-                self.image_paths.append(obj['image'])
+                self.image_paths.append(image_path)
                 self.annotations.append([obj])
 
     def __getitem__(self, index):

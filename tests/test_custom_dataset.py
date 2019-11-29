@@ -46,7 +46,7 @@ def test_detected_car_dataset():
     ])
 
     batch_size = 2
-    dataset = DetectedCarDataset(json_file=os.path.join(HERE, 'resources/cars.json'),
+    dataset = DetectedCarDataset(json_file=os.path.join(HERE, 'resources/detected-cars/2019-11-29T15-03-38/feed.json'),
                                  transforms=image_and_target_transform, batch_size=batch_size)
 
     data_loader = DataLoader(dataset=dataset, shuffle=False, batch_size=batch_size)

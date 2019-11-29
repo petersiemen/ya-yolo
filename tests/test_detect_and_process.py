@@ -27,8 +27,7 @@ def test_detect_and_process_for_detected_car_dataset():
     os.mkdir(detected_dataset_dir)
 
     feed_file = os.path.join(detected_dataset_dir, "feed.json")
-    detected_dataset_images_dir = os.path.join(detected_dataset_dir, "images")
-    os.mkdir(detected_dataset_images_dir)
+
 
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
@@ -39,7 +38,7 @@ def test_detect_and_process_for_detected_car_dataset():
         model.load_weights(weight_file)
 
         with FileWriter(file_path=feed_file) as file_writer:
-            car_dataset_writer = DetectedCarDatasetWriter(detected_dataset_images_dir, file_writer)
+            car_dataset_writer = DetectedCarDatasetWriter(file_writer)
             detected_dataset_helper = DetectedCarDatasetHelper(car_dataset_writer=car_dataset_writer,
                                                                class_names=model.class_names,
                                                                conf_thres=0.9,
