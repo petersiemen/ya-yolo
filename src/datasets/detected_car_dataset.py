@@ -44,7 +44,8 @@ class DetectedCarDatasetHelper():
             detected_car = torch.zeros(len(boxes), dtype=torch.bool, device=DEVICE)
             for box_idx in range(len(boxes)):
                 box = boxes[box_idx]
-                if box[6] == 2 and box[2] >= 0.4 and box[3] >= 0.3 and box[4] >= 0.8:
+                # if class == 2 (car) and box-width >= 0.5 and box-height >= 0.4 and class_conf >= 0.8
+                if box[6] == 2 and box[2] >= 0.5 and box[3] >= 0.3 and box[5] >= 0.8:
                     detected_car[box_idx] = True
 
             num_detected_cars = torch.sum(detected_car)
@@ -70,14 +71,17 @@ class DetectedCarDatasetHelper():
             detected_one_car_for_batch.append(detected_car)
 
         if self.debug:
-            try:
-                plot_batch([d[1][d[0]] for d in zip(detected_one_car_for_batch, detections)],
-                           None,
-                           images, self.class_names)
-            except Exception as ex:
-                plot_batch(detections,
-                           None,
-                           images, self.class_names)
+            car_detections = []
+            for i in range(len(detections)):
+                detected_car = detected_one_car_for_batch[i]
+                if len(detected_car) > 0:
+                    car_detections.append(detections[i][detected_car])
+                else:
+                    car_detections.append(detections[i])
+
+            plot_batch(car_detections,
+                       None,
+                       images, self.class_names)
 
         return sum([torch.sum(d) for d in detected_one_car_for_batch])
 
