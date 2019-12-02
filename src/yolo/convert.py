@@ -17,7 +17,7 @@ def pytorch_to_onnx(model, dummy_input, onnx_filename):
                       onnx_filename,
                       verbose=True,
                       input_names=["image"],
-                      output_names=["coordinates", "class_scores", "confidence"])
+                      output_names=["coordinates", "class_scores", "det_conf"])
     onnx_model = onnx.load(onnx_filename)
     onnx.checker.check_model(onnx_model)
 
