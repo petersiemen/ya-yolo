@@ -51,7 +51,7 @@ def run_detect_cars(in_dir, out_dir, batch_size, limit, conf_thres, nms_thres, d
             batch_size=batch_size)
 
         with FileWriter(file_path=feed_file) as file_writer:
-            car_dataset_writer = DetectedCarDatasetWriter(detected_dataset_images_dir, file_writer)
+            car_dataset_writer = DetectedCarDatasetWriter(file_writer)
 
             detected_dataset_helper = DetectedCarDatasetHelper(car_dataset_writer=car_dataset_writer,
                                                                class_names=model.class_names,
@@ -90,7 +90,7 @@ def run():
     parser.add_argument("-c", "--conf-thres", dest="conf_thres",
                         type=float,
                         default=0.9,
-                        help="objectness confidence threshold(default: 0.9)")
+                        help="detection confidence threshold(default: 0.9)")
 
     parser.add_argument("-n", "--nms-thres", dest="nms_thres",
                         type=float,

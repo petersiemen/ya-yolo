@@ -7,6 +7,7 @@ from yolo.utils import non_max_suppression
 import os
 from logging_config import *
 import json
+from device import DEVICE
 
 logger = logging.getLogger(__name__)
 HERE = os.path.dirname(os.path.realpath(__file__))
@@ -35,19 +36,19 @@ class DetectedCarDatasetHelper():
                                          conf_thres=self.conf_thres,
                                          nms_thres=self.nms_thres
                                          )
-        if self.debug:
-            plot_batch(detections, None, images, None)
 
-        detected = 0
+        detected_one_car_for_batch = []
         for b_i in range(self.batch_size):
-
             image_path = image_paths[b_i]
             boxes = detections[b_i]
+            detected_car = torch.zeros(len(boxes), dtype=torch.bool, device=DEVICE)
+            for box_idx in range(len(boxes)):
+                box = boxes[box_idx]
+                if box[6] == 2 and box[2] >= 0.4 and box[3] >= 0.3 and box[4] >= 0.8:
+                    detected_car[box_idx] = True
 
-            num_detected_cars = len([box for box in boxes if box[6] == 2])
-
+            num_detected_cars = torch.sum(detected_car)
             if num_detected_cars == 1:
-                detected += 1
                 bb = boxes[0]
                 bounding_box = {
                     'x': bb[0].item(), 'y': bb[1].item(), 'w': bb[2].item(), 'h': bb[3].item()
@@ -66,14 +67,25 @@ class DetectedCarDatasetHelper():
             elif num_detected_cars == 0:
                 logger.info("Detected no car on the image ({})".format(image_path))
 
-        return detected
+            detected_one_car_for_batch.append(detected_car)
+
+        if self.debug:
+            try:
+                plot_batch([d[1][d[0]] for d in zip(detected_one_car_for_batch, detections)],
+                           None,
+                           images, self.class_names)
+            except Exception as ex:
+                plot_batch(detections,
+                           None,
+                           images, self.class_names)
+
+        return sum([torch.sum(d) for d in detected_one_car_for_batch])
 
 
 class DetectedCarDatasetWriter():
     def __init__(self, file_writer):
         self.images_dir = os.path.join(os.path.dirname(file_writer.file_path), "images")
-        assert os.path.exists(self.images_dir) == False, f"{self.images_dir} must not exist"
-        os.mkdir(self.images_dir)
+        assert len(os.listdir(self.images_dir)) == 0, f"{self.images_dir} is not empty"
 
         self.file_writer = file_writer
         logger.info('Init {}.'.format(self))

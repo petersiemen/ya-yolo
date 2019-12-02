@@ -12,19 +12,23 @@ def test_detect_and_process_for_detected_car_dataset():
         SquashResize(416),
         CocoToTensor()
     ])
+    batch_size = 3
 
     dataset = SimpleCarDataset(root_dir='/home/peter/datasets/simple_cars/2019-08-23T10-22-54',
-                               transforms=image_and_target_transform, batch_size=2)
+                               transforms=image_and_target_transform, batch_size=batch_size)
 
     detected_cars = os.path.join(HERE, 'output/detected-cars')
     if os.path.exists(detected_cars):
         shutil.rmtree(detected_cars)
     os.mkdir(detected_cars)
 
+
     now = datetime.datetime.now()
     now_str = now.strftime("%Y-%m-%dT%H-%M-%S")
     detected_dataset_dir = os.path.join(detected_cars, now_str)
     os.mkdir(detected_dataset_dir)
+    detected_dataset_images_dir = os.path.join(detected_dataset_dir, "images")
+    os.mkdir(detected_dataset_images_dir)
 
     feed_file = os.path.join(detected_dataset_dir, "feed.json")
 
@@ -32,7 +36,6 @@ def test_detect_and_process_for_detected_car_dataset():
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
     namesfile = os.path.join(HERE, '../cfg/coco.names')
-    batch_size = 2
     with torch.no_grad():
         model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size)
         model.load_weights(weight_file)

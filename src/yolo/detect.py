@@ -39,7 +39,8 @@ def detect_and_process(model,
 
         before = time.time()
         coordinates, class_scores, confidence = model(images)
-        class_scores = torch.nn.Softmax(dim=2)(class_scores)
+        #class_scores = torch.nn.Softmax(dim=2)(class_scores)
+        class_scores = torch.sigmoid(class_scores)
         logger.info('Forward pass on {} images took {} s'.format(len(images), time.time() - before))
 
         detected += processor(
