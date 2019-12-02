@@ -120,7 +120,7 @@ class DetectedCarDatasetWriter():
 
 class DetectedCarDataset(YaYoloDataset):
 
-    def __init__(self, json_file, transforms, batch_size):
+    def __init__(self, json_file, transforms, batch_size, allow_unknown_make=False, allow_unknown_model=True):
         """
         Args:
             root_dir (string): Directory with all the feeds and images.
@@ -135,6 +135,11 @@ class DetectedCarDataset(YaYoloDataset):
         with open(json_file) as f:
             for line in f:
                 obj = json.loads(line)
+                if allow_unknown_make == False and obj['make'] == 'UNKNOWN':
+                    continue
+                if allow_unknown_model == False and obj['model'] == 'UNKNOWN':
+                    continue
+
                 image_path = os.path.join(basedir, obj['image'])
                 if not os.path.exists(image_path):
                     logger.error('image {} does not exist'.format(image_path))

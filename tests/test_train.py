@@ -104,13 +104,13 @@ def test_training_without_annotations():
           print_every=10)
 
 
-def test_training_car_makes_without_annotations():
+def test_training_car_makes():
     image_and_target_transform = Compose([
         SquashResize(416),
         CocoToTensor()
     ])
     batch_size = 2
-    dataset = DetectedCareMakeDataset(json_file=os.path.join(HERE, 'resources/cars.json'),
+    dataset = DetectedCareMakeDataset(json_file='/home/peter/datasets/detected-cars/2019-12-02T12-44-20/feed.json',
                                       transforms=image_and_target_transform, batch_size=batch_size)
 
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
