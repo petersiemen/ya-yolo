@@ -271,4 +271,9 @@ class EagerYoloLayer(nn.Module):
             .view(self.batch_size, self.num_anchors * self.height * self.width,
                   self.num_classes)
 
-        return coordinates, class_scores, det_confs.view(self.batch_size, self.num_anchors * self.height * self.width)
+        return coordinates, \
+               class_scores * det_confs.view(self.batch_size, self.num_anchors * self.height * self.width).unsqueeze(
+                   -1), \
+               det_confs.view(self.batch_size, self.num_anchors * self.height * self.width)
+
+        #return coordinates, class_scores, det_confs.view(self.batch_size, self.num_anchors * self.height * self.width)
