@@ -25,6 +25,13 @@ class Yolo(nn.Module):
         self.num_classes = tmp.pop()
         assert self.num_classes == len(self.class_names)
 
+    def freeze_parameters(self):
+        except_these = [idx -1 for idx, model in enumerate(self.models) if isinstance(model, EagerYoloLayer)]
+
+        for idx in range(len(self.models)):
+            if idx not in except_these:
+                for param in self.models[idx].parameters():
+                    param.require_grad = False
 
     def set_class_names(self, class_names):
         self.class_names = class_names
