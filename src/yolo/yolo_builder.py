@@ -6,7 +6,7 @@ from yolo.utils import parse_cfg
 class YoloBuilder:
 
     @staticmethod
-    def run(cfg_file, batch_size):
+    def run(cfg_file, batch_size, training_mode):
         blocks = parse_cfg(cfg_file)
 
         grid_sizes = []
@@ -87,7 +87,7 @@ class YoloBuilder:
 
                 layer = EagerYoloLayer(batch_size=batch_size, anchors=masked_anchors, num_classes=num_classes,
                                        in_channels=channels,
-                                       width=width, height=height)
+                                       width=width, height=height, training_mode=training_mode)
                 models.append(layer)
 
         return models, grid_sizes

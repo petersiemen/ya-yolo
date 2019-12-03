@@ -110,8 +110,9 @@ def test_training_car_makes():
         CocoToTensor()
     ])
     batch_size = 2
-    dataset = DetectedCareMakeDataset(json_file='/home/peter/datasets/detected-cars-small/feed.json',
-                                      transforms=image_and_target_transform, batch_size=batch_size)
+    dataset = DetectedCareMakeDataset(
+        json_file='/home/peter/datasets/detected-cars/more_than_4000_detected_per_make/train.json',
+        transforms=image_and_target_transform, batch_size=batch_size)
 
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
@@ -119,7 +120,7 @@ def test_training_car_makes():
     model_dir = os.path.join(HERE, 'models')
 
     lr = 0.001
-    model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size)
+    model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size, training_mode=True)
     model.load_weights(weight_file)
     model.set_num_classes(dataset.get_num_classes())
     model.set_class_names(dataset.get_class_names())
@@ -137,7 +138,7 @@ def test_training_car_makes():
           lambda_coord=5,
           lambda_no_obj=0.5,
           gradient_accumulations=1,
-          limit=2,
+          limit=3,
           debug=True,
           print_every=10,
           save_every=1)

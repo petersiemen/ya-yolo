@@ -2,6 +2,7 @@ import argparse
 import os
 import sys
 
+import torch
 from torch.utils.tensorboard import SummaryWriter
 
 from datasets.detected_car_dataset import DetectedCareMakeDataset
@@ -9,6 +10,7 @@ from datasets.preprocess import *
 from logging_config import *
 from yolo.yolo import Yolo
 from yolo.train import train
+from device import DEVICE
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +26,8 @@ def train_car_make(car_make_json_file,
                    limit,
                    log_every,
                    save_every,
-                   model_dir):
+                   model_dir,
+                   parameters):
     image_and_target_transform = Compose([
         SquashResize(416),
         CocoToTensor()
@@ -37,10 +40,15 @@ def train_car_make(car_make_json_file,
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
     namesfile = os.path.join(HERE, '../cfg/coco.names')
 
-    model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size)
+    model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size, training_mode=True)
     model.load_weights(weight_file)
     model.set_num_classes(dataset.get_num_classes())
     model.set_class_names(dataset.get_class_names())
+    if parameters is not None:
+        logger.info(f"loading model parameters from {parameters}")
+        model.load_state_dict(
+            torch.load(parameters,
+                       map_location=DEVICE))
 
     summary_writer = SummaryWriter(comment=f' evaluate={batch_size}')
     train(model=model,
@@ -112,6 +120,11 @@ def run():
                         type=int,
                         help="after how many batches we are saving the models")
 
+    parser.add_argument("-p", "--parameters", dest="parameters",
+                        default=None,
+                        metavar="FILE",
+                        help="if given we initialize the model with these params")
+
     args = parser.parse_args()
     if args.car_make_json_file is None:
         parser.print_help()
@@ -127,6 +140,7 @@ def run():
         limit = args.limit
         model_dir = args.model_dir
         save_every = args.save_every
+        parameters = args.parameters
 
         train_car_make(car_make_json_file,
                        batch_size,
@@ -137,7 +151,8 @@ def run():
                        limit,
                        log_every,
                        save_every,
-                       model_dir)
+                       model_dir,
+                       parameters)
 
         sys.exit(0)
 

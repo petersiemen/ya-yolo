@@ -150,7 +150,8 @@ def train(model,
     logger.info(
         f'Start training on {total} images. Using lr: {lr}, '
         f'lambda_coord: {lambda_coord}, lambda_no_obj: {lambda_no_obj}, '
-        f'conf_thres: {conf_thres}, nms_thres:{nms_thres}, iou_thres: {iou_thres}')
+        f'conf_thres: {conf_thres}, nms_thres:{nms_thres}, iou_thres: {iou_thres}, '
+        f'gradient_accumulations: {gradient_accumulations}')
     metrics = Metrics()
 
     model.to(DEVICE)

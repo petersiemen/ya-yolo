@@ -188,7 +188,7 @@ class UpsampleLayer(nn.Module):
 
 
 class EagerYoloLayer(nn.Module):
-    def __init__(self, batch_size, anchors, num_classes, in_channels, height, width):
+    def __init__(self, batch_size, anchors, num_classes, in_channels, height, width, training_mode):
         super(EagerYoloLayer, self).__init__()
         self.batch_size = batch_size
         self.anchors = anchors
@@ -197,6 +197,7 @@ class EagerYoloLayer(nn.Module):
         self.in_channels = in_channels
         self.height = height
         self.width = width
+        self.training_mode = training_mode
 
         self.grid_x, self.grid_y, self.anchor_w, self.anchor_h = self.create_grid()
 
@@ -270,10 +271,11 @@ class EagerYoloLayer(nn.Module):
         class_scores = output[5:5 + self.num_classes].transpose(0, 1) \
             .view(self.batch_size, self.num_anchors * self.height * self.width,
                   self.num_classes)
-
-        return coordinates, \
-               class_scores * det_confs.view(self.batch_size, self.num_anchors * self.height * self.width).unsqueeze(
-                   -1), \
-               det_confs.view(self.batch_size, self.num_anchors * self.height * self.width)
-
-        #return coordinates, class_scores, det_confs.view(self.batch_size, self.num_anchors * self.height * self.width)
+        if self.training_mode:
+            return coordinates, class_scores, det_confs.view(self.batch_size,
+                                                             self.num_anchors * self.height * self.width)
+        else:
+            return coordinates, \
+                   class_scores * det_confs.view(self.batch_size, self.num_anchors * self.height * self.width).unsqueeze(
+                       -1), \
+                   det_confs.view(self.batch_size, self.num_anchors * self.height * self.width)
