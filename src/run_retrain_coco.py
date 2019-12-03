@@ -41,9 +41,10 @@ def train_coco(coco_images_dir,
             torch.load(parameters,
                        map_location=DEVICE))
 
+    model.freeze_parameters()
     # this recreates the last convolutional layer before the yolo layer
     model.set_num_classes(model.num_classes)
-    model.freeze_parameters()
+
 
     image_and_target_transform = Compose([
         ConvertXandYToCenterOfBoundingBox(),
