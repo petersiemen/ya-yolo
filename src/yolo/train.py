@@ -220,6 +220,10 @@ def train(model,
                 # zero the parameter (weight) gradients
                 optimizer.zero_grad()
 
+            del images
+            del annotations
+            del ground_truth_boxes
+
             yolo_loss.capture(summary_writer, batch_i, during='train')
             if batch_i % print_every == 0:  # print every print_every +1  batches
                 log_performance(epoch, epochs, batch_i, total, yolo_loss, metrics, class_names, summary_writer)
