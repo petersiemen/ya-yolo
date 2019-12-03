@@ -18,7 +18,7 @@ class GroundTruth:
         for image_i in range(batch_size):
             image_id = image_path_to_image_id(image_paths[image_i])
             for ground_truth in ground_truths[image_i]:
-                ground_truth = ground_truth.detach().numpy()
+                ground_truth = ground_truth.detach().cpu().numpy()
                 yield GroundTruth(file_id=image_id, class_id=int(ground_truth[-1]), bounding_box=BoundingBox.from_xywh(
                     x=ground_truth[0], y=ground_truth[1], w=ground_truth[2], h=ground_truth[3]
                 ))
