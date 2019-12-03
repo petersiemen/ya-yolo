@@ -44,7 +44,7 @@ def run_create_filtered_detected_cars_datast(in_file, out_dir, makes_to_keep, li
                 shutil.copy(image_path, os.path.join(out_images_dir, os.path.basename(image_path)))
                 f.write(str(annotation) + '\n')
                 existing_makes.add(make)
-                if i > limit:
+                if limit is not None and i > limit:
                     logger.info(f"Stopping here because limit {limit} was set")
                     break
 
