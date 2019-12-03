@@ -29,6 +29,11 @@ class Yolo(nn.Module):
         for param in self.parameters():
             param.requires_grad = False
 
+    def get_trainable_parameters(self):
+        yolo_indices = [idx - 1 for idx, model in enumerate(self.models) if isinstance(model, EagerYoloLayer)]
+        for idx in yolo_indices:
+            yield from self.models[idx - 1].parameters()
+
     def set_class_names(self, class_names):
         self.class_names = class_names
 
