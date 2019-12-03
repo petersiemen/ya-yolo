@@ -39,7 +39,7 @@ def test_predict_with_coreml_without_nms():
 
     coordinates = output["coordinates"]
     class_scores = output["class_scores"]
-    confidence = output["confidence"]
+    confidence = output["det_conf"]
 
     coordinates = torch.tensor(coordinates)
     class_scores = torch.tensor(class_scores)
@@ -100,7 +100,7 @@ def test_export_yolo_to_coreml_with_nms():
 
 
 
-def test_predict_with_coreml_without_nms():
+def test_predict_with_coreml_with_nms():
     class_names = load_class_names(namesfile)
 
     transform_resize = Compose([
