@@ -53,11 +53,11 @@ def test_detected_cars_dataset():
     print(df)
     plt.figure()
     makes = df['make'].value_counts()
-    makes.where(lambda x: x > 2000).dropna().plot(kind='bar')
+    makes.where(lambda x: x > 4000).dropna().plot(kind='bar')
     # df['make'].value_counts().plot(kind='bar')
     plt.show()
 
-    with open(os.path.join(HERE, 'output/makes_with_more_than_2000_detected_cars.csv'), 'w') as f:
+    with open(os.path.join(HERE, 'output/makes_with_more_than_4000_detected_cars.csv'), 'w') as f:
         f.writelines('\n'.join(makes.index.tolist()))
 
 
