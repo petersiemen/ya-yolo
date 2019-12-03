@@ -155,7 +155,7 @@ def train(model,
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     grid_sizes = model.grid_sizes
 
-    data_loader = DataLoader(ya_yolo_dataset, batch_size=ya_yolo_dataset.batch_size, shuffle=False)
+    data_loader = DataLoader(ya_yolo_dataset, batch_size=ya_yolo_dataset.batch_size, shuffle=True)
     batch_size = ya_yolo_dataset.batch_size
     class_names = model.class_names
 
