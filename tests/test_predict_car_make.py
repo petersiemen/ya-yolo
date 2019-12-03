@@ -16,7 +16,7 @@ def test_predict_car_make():
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
     namesfile = os.path.join(HERE, '../cfg/coco.names')
-    model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size)
+    model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size, coreml_mode=False)
     model.load_weights(weight_file)
     model.set_num_classes(len(class_names))
     model.set_class_names(class_names)

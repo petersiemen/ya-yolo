@@ -11,9 +11,9 @@ logger = logging.getLogger(__name__)
 
 
 class Yolo(nn.Module):
-    def __init__(self, cfg_file, namesfile, batch_size, training_mode):
+    def __init__(self, cfg_file, namesfile, batch_size, coreml_mode=False):
         super(Yolo, self).__init__()
-        self.models, self.grid_sizes = YoloBuilder.run(cfg_file, batch_size, training_mode)
+        self.models, self.grid_sizes = YoloBuilder.run(cfg_file, batch_size, coreml_mode)
         self.output_tensor_length = self.get_output_tensor_length()
 
         self.class_names = load_class_names(namesfile=namesfile)
@@ -24,6 +24,7 @@ class Yolo(nn.Module):
         assert len(tmp) == 1
         self.num_classes = tmp.pop()
         assert self.num_classes == len(self.class_names)
+
 
     def set_class_names(self, class_names):
         self.class_names = class_names
