@@ -140,7 +140,8 @@ def train(model,
           gradient_accumulations=2,
           limit=None,
           debug=False,
-          print_every=10):
+          print_every=10,
+          save_every=None):
     total = limit if limit is not None else len(ya_yolo_dataset)
 
     logger.info(
@@ -231,11 +232,14 @@ def train(model,
             if limit is not None and batch_i + 1 >= limit:
                 logger.info('Stop here after training {} batches (limit: {})'.format(batch_i, limit))
                 log_performance(epoch, epochs, batch_i, total, yolo_loss, metrics, class_names, summary_writer)
-                save_model(model_dir, model, epoch)
+                save_model(model_dir, model, epoch, batch_i)
                 return
 
+            if save_every is not None and batch_i % save_every == 0:
+                save_model(model_dir, model, epoch, batch_i)
+
         # save model after every epoch
-        save_model(model_dir, model, epoch)
+        save_model(model_dir, model, epoch, None)
 
 
 def log_performance(epoch, epochs, batch_i, total, yolo_loss, metrics, class_names, summary_writer):
@@ -262,6 +266,6 @@ def log_average_precision_for_classes(metrics, class_names, summary_writer, glob
         summary_writer.add_image('Average_Precision', data, global_step, dataformats='HWC')
 
 
-def save_model(model_dir, model, epoch):
+def save_model(model_dir, model, epoch, batch):
     model.save(model_dir,
-               'yolo__num_classes_{}__epoch_{}.pt'.format(model.num_classes, epoch))
+               'yolo__num_classes_{}__epoch_{}_batch_{}.pt'.format(model.num_classes, epoch, batch))

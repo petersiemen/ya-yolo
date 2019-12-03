@@ -23,6 +23,7 @@ def train_car_make(car_make_json_file,
                    epochs,
                    limit,
                    log_every,
+                   save_every,
                    model_dir):
     image_and_target_transform = Compose([
         SquashResize(416),
@@ -56,7 +57,8 @@ def train_car_make(car_make_json_file,
           gradient_accumulations=gradient_accumulations,
           limit=limit,
           debug=False,
-          print_every=log_every)
+          print_every=log_every,
+          save_every=save_every)
     summary_writer.close()
 
 
@@ -105,6 +107,11 @@ def run():
                         metavar="FILE",
                         help="location where to store the trained pytorch models")
 
+    parser.add_argument("-s", "--save-every", dest="save_every",
+                        default=None,
+                        type=int,
+                        help="after how many batches we are saving the models")
+
     args = parser.parse_args()
     if args.car_make_json_file is None:
         parser.print_help()
@@ -119,6 +126,7 @@ def run():
         log_every = args.log_every
         limit = args.limit
         model_dir = args.model_dir
+        save_every = args.save_every
 
         train_car_make(car_make_json_file,
                        batch_size,
@@ -128,6 +136,7 @@ def run():
                        epochs,
                        limit,
                        log_every,
+                       save_every,
                        model_dir)
 
         sys.exit(0)

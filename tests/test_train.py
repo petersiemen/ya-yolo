@@ -139,4 +139,5 @@ def test_training_car_makes():
           gradient_accumulations=1,
           limit=2,
           debug=True,
-          print_every=10)
+          print_every=10,
+          save_every=1)
