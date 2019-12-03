@@ -18,6 +18,7 @@ HERE = os.path.dirname(os.path.realpath(__file__))
 def train_car_make(car_make_json_file,
                    batch_size,
                    conf_thres,
+                   gradient_accumulations,
                    epochs,
                    limit,
                    log_every,
@@ -51,6 +52,7 @@ def train_car_make(car_make_json_file,
           iou_thres=0.5,
           lambda_coord=5,
           lambda_no_obj=0.5,
+          gradient_accumulations=gradient_accumulations,
           limit=limit,
           debug=False,
           print_every=log_every)
@@ -58,7 +60,7 @@ def train_car_make(car_make_json_file,
 
 
 def run():
-    parser = argparse.ArgumentParser('run_evaluate.py')
+    parser = argparse.ArgumentParser('run_train_car_make.py')
     parser.add_argument("-f", "--car-make-json-file", dest="car_make_json_file",
                         help="location the detected car make file", metavar="FILE")
 
@@ -71,6 +73,11 @@ def run():
                         type=float,
                         default=0.5,
                         help="confidence threshold used in nms")
+
+    parser.add_argument("-g", "--gradient-accumulations", dest="gradient_accumulations",
+                        type=int,
+                        default=2,
+                        help="number of batches to accumulate the losses over before backpropagating the gradients")
 
     parser.add_argument("-e", "--epochs", dest="epochs",
                         type=int,
@@ -100,6 +107,7 @@ def run():
         car_make_json_file = args.car_make_json_file
         batch_size = args.batch_size
         conf_thres = args.conf_thres
+        gradient_accumulations = args.gradient_accumulations
         epochs = args.epochs
         log_every = args.log_every
         limit = args.limit
@@ -108,6 +116,7 @@ def run():
         train_car_make(car_make_json_file,
                        batch_size,
                        conf_thres,
+                       gradient_accumulations,
                        epochs,
                        limit,
                        log_every,

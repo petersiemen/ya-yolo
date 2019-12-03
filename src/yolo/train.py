@@ -137,6 +137,7 @@ def train(model,
           iou_thres,
           lambda_coord=5,
           lambda_no_obj=0.5,
+          gradient_accumulations=2,
           limit=None,
           debug=False,
           print_every=10):
@@ -159,9 +160,6 @@ def train(model,
     class_names = model.class_names
 
     for epoch in range(1, epochs + 1):
-
-        running_loss = 0.0
-
         for batch_i, (images, annotations, image_paths) in tqdm(enumerate(data_loader), total=total):
 
             images = images.to(DEVICE)
@@ -211,21 +209,20 @@ def train(model,
                 plot_batch(detections, ground_truth_boxes, images, class_names)
 
             loss = yolo_loss.get()
-
-            # zero the parameter (weight) gradients
-            optimizer.zero_grad()
             # backward pass to calculate the weight gradients
             loss.backward()
-            # update the weights
-            optimizer.step()
 
-            # to convert loss into a scalar and add it to the running_loss, use .item()
-            running_loss += loss.item() / batch_size
+            # Accumulates gradient before each step
+            if batch_i % gradient_accumulations == 0:
+                logger.info(f"Updating weights for batch {batch_i} (gradient_accumulations :{gradient_accumulations})")
+                # update the weights
+                optimizer.step()
+                # zero the parameter (weight) gradients
+                optimizer.zero_grad()
 
             yolo_loss.capture(summary_writer, batch_i, during='train')
             if batch_i % print_every == 0:  # print every print_every +1  batches
                 log_performance(epoch, epochs, batch_i, total, yolo_loss, metrics, class_names, summary_writer)
-                running_loss = 0.0
 
             if limit is not None and batch_i + 1 >= limit:
                 logger.info('Stop here after training {} batches (limit: {})'.format(batch_i, limit))

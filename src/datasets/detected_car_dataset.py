@@ -199,7 +199,10 @@ class DetectedCarDataset(YaYoloDataset):
 class DetectedCareMakeDataset(DetectedCarDataset):
     def __init__(self, json_file, transforms, batch_size):
         super(DetectedCareMakeDataset, self).__init__(json_file, transforms, batch_size)
-        with open(os.path.join(HERE, 'car-makes.csv')) as f:
+        car_makes_file = os.path.join(os.path.dirname(json_file), "makes.csv")
+        assert os.path.exists(car_makes_file), f"{car_makes_file} does not exist"
+
+        with open(car_makes_file) as f:
             self._class_names = [make.strip() for make in f.readlines()]
 
     def get_num_classes(self):

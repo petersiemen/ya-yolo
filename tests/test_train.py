@@ -110,7 +110,7 @@ def test_training_car_makes():
         CocoToTensor()
     ])
     batch_size = 2
-    dataset = DetectedCareMakeDataset(json_file='/home/peter/datasets/detected-cars/2019-12-02T12-44-20/feed.json',
+    dataset = DetectedCareMakeDataset(json_file='/home/peter/datasets/detected-cars-small/feed.json',
                                       transforms=image_and_target_transform, batch_size=batch_size)
 
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
@@ -136,6 +136,7 @@ def test_training_car_makes():
           iou_thres=0.5,
           lambda_coord=5,
           lambda_no_obj=0.5,
+          gradient_accumulations=1,
           limit=2,
           debug=True,
           print_every=10)

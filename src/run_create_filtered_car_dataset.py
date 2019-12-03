@@ -2,7 +2,7 @@ import argparse
 import os
 import shutil
 import sys
-
+import json
 from tqdm import tqdm
 
 from datasets.detected_car_dataset import DetectedCarDataset
@@ -42,7 +42,7 @@ def run_create_filtered_detected_cars_datast(in_file, out_dir, makes_to_keep, li
             make = annotation['make']
             if make in makes_to_keep:
                 shutil.copy(image_path, os.path.join(out_images_dir, os.path.basename(image_path)))
-                f.write(str(annotation) + '\n')
+                f.write(json.dumps(annotation) + '\n')
                 existing_makes.add(make)
                 if limit is not None and i > limit:
                     logger.info(f"Stopping here because limit {limit} was set")
