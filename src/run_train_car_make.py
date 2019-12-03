@@ -17,6 +17,7 @@ HERE = os.path.dirname(os.path.realpath(__file__))
 
 def train_car_make(car_make_json_file,
                    batch_size,
+                   lr,
                    conf_thres,
                    gradient_accumulations,
                    epochs,
@@ -46,7 +47,7 @@ def train_car_make(car_make_json_file,
           model_dir=model_dir,
           summary_writer=summary_writer,
           epochs=epochs,
-          lr=0.01,
+          lr=lr,
           conf_thres=conf_thres,
           nms_thres=0.5,
           iou_thres=0.5,
@@ -68,6 +69,11 @@ def run():
                         type=int,
                         default=8,
                         help="batch_size for reading the raw dataset (default: 5)")
+
+    parser.add_argument("-r", "--learning-rate", dest="lr",
+                        type=float,
+                        default=0.001,
+                        help="learning-rate")
 
     parser.add_argument("-c", "--conf-thres", dest="conf_thres",
                         type=float,
@@ -106,6 +112,7 @@ def run():
     else:
         car_make_json_file = args.car_make_json_file
         batch_size = args.batch_size
+        lr = args.lr
         conf_thres = args.conf_thres
         gradient_accumulations = args.gradient_accumulations
         epochs = args.epochs
@@ -115,6 +122,7 @@ def run():
 
         train_car_make(car_make_json_file,
                        batch_size,
+                       lr,
                        conf_thres,
                        gradient_accumulations,
                        epochs,
