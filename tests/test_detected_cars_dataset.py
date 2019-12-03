@@ -16,7 +16,8 @@ def _get_df():
     ws = []
     hs = []
     i = 0
-    with open('/home/peter/datasets/detected-cars/2019-12-02T12-44-20/feed.json') as f:
+    #with open('/home/peter/datasets/detected-cars/2019-12-02T12-44-20/feed.json') as f:
+    with open('/home/peter/datasets/detected-cars-small2/feed.json') as f:
         for line in f:
             # {"image": "images/75be2a0d2743d7c670cba48c416af6ae00d37171.jpg", "make": "Peugeot", "model": "Camper", "price": 3200, "date_of_first_registration": 1999, "bbox": [0.5305101871490479, 0.4644054174423218, 0.9032427072525024, 0.5885359048843384]}
             obj = json.loads(line)
@@ -53,12 +54,13 @@ def test_detected_cars_dataset():
     print(df)
     plt.figure()
     makes = df['make'].value_counts()
-    makes.where(lambda x: x > 4000).dropna().plot(kind='bar')
+    #makes.where(lambda x: x > 4000).dropna().plot(kind='bar')
+    makes.plot(kind='bar')
     # df['make'].value_counts().plot(kind='bar')
     plt.show()
 
-    with open(os.path.join(HERE, 'output/makes_with_more_than_4000_detected_cars.csv'), 'w') as f:
-        f.writelines('\n'.join(makes.index.tolist()))
+    # with open(os.path.join(HERE, 'output/makes_with_more_than_4000_detected_cars.csv'), 'w') as f:
+    #     f.writelines('\n'.join(makes.index.tolist()))
 
 
 def test_seaborn():
@@ -72,3 +74,4 @@ def test_seaborn():
                     height=6, kind="bar", palette="muted")
     g.despine(left=True)
     g.set_ylabels("survival probability")
+    plt.show()
