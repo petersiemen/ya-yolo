@@ -14,6 +14,9 @@ from metrics.ground_truth import GroundTruth
 from metrics.detection import Detection
 from pprint import pformat
 from tqdm import tqdm
+import random
+
+random.seed(0)
 
 logger = logging.getLogger(__name__)
 
