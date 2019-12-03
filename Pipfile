@@ -17,7 +17,7 @@ netron = "*"
 nltk = "*"
 cython = "*"
 tensorboard = "*"
-#pycocotools = "*"
+pycocotools = "*"
 #mAP = {git = 'https://github.com/petersiemen/mAP.git',ref = 'master',editable = true}
 onnx-coreml = {git = 'https://github.com/onnx/onnx-coreml.git',ref = 'master',editable = true}
 ##onnxmltools = "*"
@@ -26,6 +26,8 @@ coremltools = "*"
 #coremltools = {git= 'https://github.com/apple/coremltools.git', ref = 'master', editable = true}
 terminaltables = "*"
 tensorboardcolab = "*"
+pandas = "*"
+seaborn = "*"
 
 [requires]
 python_version = "3.6"
