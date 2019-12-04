@@ -15,6 +15,8 @@ from metrics.detection import Detection
 from pprint import pformat
 from tqdm import tqdm
 import random
+from yolo.layers import ConvolutionalLayer
+from torch.nn.utils import clip_grad_norm_
 
 random.seed(0)
 
@@ -144,17 +146,19 @@ def train(model,
           lambda_coord=5,
           lambda_no_obj=0.5,
           gradient_accumulations=2,
+          clip_gradients=False,
           limit=None,
           debug=False,
           print_every=10,
           save_every=None):
-    total = limit if limit is not None else len(ya_yolo_dataset)
+    total = limit if limit is not None else len(dataset)
 
     logger.info(
         f'Start training on {total} images. Using lr: {lr}, '
         f'lambda_coord: {lambda_coord}, lambda_no_obj: {lambda_no_obj}, '
         f'conf_thres: {conf_thres}, nms_thres:{nms_thres}, iou_thres: {iou_thres}, '
-        f'gradient_accumulations: {gradient_accumulations}')
+        f'gradient_accumulations: {gradient_accumulations}, '
+        f'clip_gradients: {clip_gradients}')
     metrics = Metrics()
 
     model.to(DEVICE)
@@ -163,19 +167,17 @@ def train(model,
     optimizer = torch.optim.Adam(model.get_trainable_parameters(), lr=lr)
     grid_sizes = model.grid_sizes
 
-    data_loader = DataLoader(dataset, batch_size=dataset.batch_size, shuffle=True, collate_fn=dataset.collate_fn)
-    batch_size = dataset.batch_size
+    data_loader = DataLoader(dataset, batch_size=dataset.batch_size, shuffle=True,
+                             collate_fn=dataset.collate_fn)
     class_names = model.class_names
 
     for epoch in range(1, epochs + 1):
         for batch_i, (images, ground_truth_boxes, image_paths) in tqdm(enumerate(data_loader), total=total):
+            if len(images) != dataset.batch_size:
+                logger.warning(f"Skipping batch {batch_i} because it does not have correct size ({dataset.batch_size})")
+                continue
 
             images = images.to(DEVICE)
-            if images.shape[0] != batch_size:
-                logger.info(
-                    'Skipping batch {} because batch-size {} is not as expected {}'.format(batch_i + 1, len(images),
-                                                                                           batch_size))
-                continue
 
             coordinates, class_scores, confidence = model(images)
 
@@ -214,6 +216,15 @@ def train(model,
             # backward pass to calculate the weight gradients
             loss.backward()
 
+            if clip_gradients:
+                logger.info("Clipping gradients with max_norm = 1")
+                clip_grad_norm_(model.parameters(), max_norm=1)
+
+            if batch_i % print_every == 0:  # print every print_every +1  batches
+                yolo_loss.capture(summary_writer, batch_i, during='train')
+                plot_weights_and_gradients(model, summary_writer, epoch * batch_i)
+                log_performance(epoch, epochs, batch_i, total, yolo_loss, metrics, class_names, summary_writer)
+
             # Accumulates gradient before each step
             if batch_i % gradient_accumulations == 0:
                 logger.info(f"Updating weights for batch {batch_i} (gradient_accumulations :{gradient_accumulations})")
@@ -224,10 +235,6 @@ def train(model,
 
             del images
             del ground_truth_boxes
-
-            yolo_loss.capture(summary_writer, batch_i, during='train')
-            if batch_i % print_every == 0:  # print every print_every +1  batches
-                log_performance(epoch, epochs, batch_i, total, yolo_loss, metrics, class_names, summary_writer)
 
             if limit is not None and batch_i + 1 >= limit:
                 logger.info('Stop here after training {} batches (limit: {})'.format(batch_i, limit))
@@ -269,3 +276,21 @@ def log_average_precision_for_classes(metrics, class_names, summary_writer, glob
 def save_model(model_dir, model, epoch, batch):
     model.save(model_dir,
                'yolo__num_classes_{}__epoch_{}_batch_{}.pt'.format(model.num_classes, epoch, batch))
+
+
+def plot_weights_and_gradients(model, summary_writer, global_step):
+    for layer in model.models:
+        if isinstance(layer, ConvolutionalLayer):
+            layer_idx = layer.layer_idx
+            conv = layer.models[0]
+            weight = conv.weight
+            summary_writer.add_histogram(f'conv_{layer_idx}/weight', weight.view(-1), global_step)
+            if weight.grad is not None:
+                weight_grad = weight.grad
+                summary_writer.add_histogram(f'conv_{layer_idx}/weight_grad', weight_grad.view(-1), global_step)
+            if conv.bias is not None:
+                bias = conv.bias
+                summary_writer.add_histogram(f'conv_{layer_idx}/bias', bias.view(-1), global_step)
+                if conv.bias.grad is not None:
+                    bias_grad = conv.bias.grad
+                    summary_writer.add_histogram(f'conv_{layer_idx}/bias_grad', bias_grad.view(-1), global_step)

@@ -1,6 +1,6 @@
-from .context import *
 from torch.utils.tensorboard import SummaryWriter
-import torchvision
+
+from .context import *
 
 HERE = os.path.dirname(os.path.realpath(__file__))
 COCO_IMAGES_DIR = os.path.join(HERE, '../../../datasets/coco-small/cocoapi/images/train2014')
@@ -54,54 +54,6 @@ def test_training():
     summary_writer.close()
 
 
-def test_training_without_annotations():
-    cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
-    weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
-    namesfile = os.path.join(HERE, '../cfg/coco.names')
-    model_dir = os.path.join(HERE, 'models')
-
-    batch_size = 2
-    lr = 0.001
-    model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size)
-    model.load_weights(weight_file)
-
-    image_and_target_transform = Compose([
-        ConvertXandYToCenterOfBoundingBox(),
-        AbsoluteToRelativeBoundingBox(),
-        SquashResize(416),
-        CocoToTensor()
-    ])
-
-    class TestYoloCocoDataset(YaYoloCocoDataset):
-        def get_ground_truth_boxes(self, annotations):
-            boxes_for_batch = []
-            for b_i in range(self.batch_size):
-                boxes_for_image = []
-                boxes_for_batch.append(boxes_for_image)
-            ground_truth_boxes = torch.tensor(boxes_for_batch)
-            return ground_truth_boxes
-
-    ya_yolo_dataset = TestYoloCocoDataset(images_dir=COCO_IMAGES_DIR, annotations_file=COCO_ANNOTATIONS_FILE,
-                                          transforms=image_and_target_transform,
-                                          batch_size=batch_size)
-
-    summary_writer = SummaryWriter(comment=f' batch_size={batch_size} lr={lr}')
-    train(model=model,
-          ya_yolo_dataset=ya_yolo_dataset,
-          model_dir=model_dir,
-          summary_writer=summary_writer,
-          epochs=1,
-          lr=lr,
-          conf_thres=0.9,
-          nms_thres=0.5,
-          iou_thres=0.5,
-          lambda_coord=5,
-          lambda_no_obj=0.5,
-          limit=2,
-          debug=True,
-          print_every=10)
-
-
 def test_training_car_makes():
     image_and_target_transform = Compose([
         SquashResize(416),
@@ -118,14 +70,14 @@ def test_training_car_makes():
     model_dir = os.path.join(HERE, 'models')
 
     lr = 0.001
-    model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size, training_mode=True)
+    model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size)
     model.load_weights(weight_file)
     model.set_num_classes(dataset.get_num_classes())
     model.set_class_names(dataset.get_class_names())
 
     summary_writer = SummaryWriter(comment=f' batch_size={batch_size} lr={lr}')
     train(model=model,
-          ya_yolo_dataset=dataset,
+          dataset=dataset,
           model_dir=model_dir,
           summary_writer=summary_writer,
           epochs=1,

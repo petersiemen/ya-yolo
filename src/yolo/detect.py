@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 def detect_and_process(model,
-                       ya_yolo_dataset,
+                       dataset,
                        processor,
                        limit=None,
                        skip=None
@@ -19,27 +19,28 @@ def detect_and_process(model,
     logging.info(
         'start object detection run with processor'.format(processor))
 
-    batch_size = ya_yolo_dataset.batch_size
-    data_loader = DataLoader(ya_yolo_dataset, batch_size=ya_yolo_dataset.batch_size, shuffle=False)
+    batch_size = dataset.batch_size
+    data_loader = DataLoader(dataset, batch_size=dataset.batch_size, shuffle=False,
+                             collate_fn=dataset.collate_fn)
 
     cnt = 0
     detected = 0
-    total = len(ya_yolo_dataset)
+    total = len(dataset)
     if limit is not None:
         total = limit
 
     for batch_i, (images, annotations, image_paths) in tqdm(enumerate(data_loader), total=total / batch_size):
-        cnt += batch_size
-        if skip is not None and skip > cnt:
-            logger.info('Skipping batch of {}. (skip: {}, cnt: {})'.format(batch_size, skip, cnt))
+        if len(images) != dataset.batch_size:
+            logger.warning(f"Skipping batch {batch_i} because it does not have correct size ({dataset.batch_size})")
             continue
 
+        cnt += batch_size
         images = images.to(DEVICE)
         logger.info('Start detection on batch {} of {} images...'.format(batch_i, len(images)))
 
         before = time.time()
         coordinates, class_scores, confidence = model(images)
-        #class_scores = torch.nn.Softmax(dim=2)(class_scores)
+        # class_scores = torch.nn.Softmax(dim=2)(class_scores)
         class_scores = torch.sigmoid(class_scores)
         logger.info('Forward pass on {} images took {} s'.format(len(images), time.time() - before))
 

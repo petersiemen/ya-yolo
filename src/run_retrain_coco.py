@@ -23,6 +23,7 @@ def train_coco(coco_images_dir,
                lr,
                conf_thres,
                gradient_accumulations,
+               clip_gradients,
                epochs,
                limit,
                log_every,
@@ -44,7 +45,6 @@ def train_coco(coco_images_dir,
     model.freeze_parameters()
     # this recreates the last convolutional layer before the yolo layer
     model.set_num_classes(model.num_classes)
-
 
     image_and_target_transform = Compose([
         SquashResize(416),
@@ -69,6 +69,7 @@ def train_coco(coco_images_dir,
           lambda_coord=5,
           lambda_no_obj=0.5,
           gradient_accumulations=gradient_accumulations,
+          clip_gradients=clip_gradients,
           limit=limit,
           debug=False,
           print_every=log_every,
@@ -103,6 +104,10 @@ def run():
                         type=int,
                         default=2,
                         help="number of batches to accumulate the losses over before backpropagating the gradients")
+
+    parser.add_argument("-cg", "--clip-gradients", dest="clip_gradients",
+                        action="store_true",
+                        help="clip gradients")
 
     parser.add_argument("-e", "--epochs", dest="epochs",
                         type=int,
@@ -145,6 +150,7 @@ def run():
         lr = args.lr
         conf_thres = args.conf_thres
         gradient_accumulations = args.gradient_accumulations
+        clip_gradients = args.clip_gradients
         epochs = args.epochs
         log_every = args.log_every
         limit = args.limit
@@ -158,6 +164,7 @@ def run():
                    lr,
                    conf_thres,
                    gradient_accumulations,
+                   clip_gradients,
                    epochs,
                    limit,
                    log_every,

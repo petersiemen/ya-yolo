@@ -42,6 +42,10 @@ def evaluate(model,
 
         total = limit if limit is not None else len(data_loader)
         for batch_i, (images, ground_truth_boxes, image_paths) in tqdm(enumerate(data_loader), total=total):
+            if len(images) != dataset.batch_size:
+                logger.warning(f"Skipping batch {batch_i} because it does not have correct size ({dataset.batch_size})")
+                continue
+
             images = images.to(DEVICE)
 
             coordinates, class_scores, confidence = model(images)

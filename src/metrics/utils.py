@@ -46,7 +46,6 @@ def draw_fig(dictionary, window_title, plot_title, x_label, plot_color='royalblu
     r = fig.canvas.get_renderer()
     for i, val in enumerate(sorted_values):
         str_val = " " + str(val)  # add a space before
-        #if val < 1.0:
         str_val = " {0:.2f}".format(val)
         t = plt.text(val, i, str_val, color=plot_color, va='center', fontweight='bold')
         # re-set axes to show number inside the figure
