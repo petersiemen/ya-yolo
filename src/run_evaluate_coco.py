@@ -31,8 +31,8 @@ def evaluate_coco(image_dir, annotations_file, batch_size,
     ])
 
     dataset = YaYoloCocoDataset(images_dir=image_dir, annotations_file=annotations_file,
-                                        transforms=image_and_target_transform,
-                                        batch_size=batch_size)
+                                transforms=image_and_target_transform,
+                                batch_size=batch_size)
 
     summary_writer = SummaryWriter(comment=f' evaluate={batch_size}')
     evaluate(model, dataset, summary_writer,
@@ -59,7 +59,7 @@ def run():
     parser.add_argument("-c", "--conf-thres", dest="conf_thres",
                         type=float,
                         default=0.5,
-                        help="confidence threshold used in nms", metavar="FILE")
+                        help="confidence threshold used in nms")
 
     parser.add_argument("-b", "--batch-size", dest="batch_size",
                         type=int,
