@@ -1,6 +1,6 @@
 from shutil import copyfile
 import torch
-from datasets.yayolo_dataset import YaYoloDataset
+from torch.utils.data import Dataset
 from exif import load_image_file
 from yolo.plotting import *
 from yolo.utils import non_max_suppression
@@ -118,7 +118,7 @@ class DetectedCarDatasetWriter():
         return 'DetectedSimpleCarDatasetWriter({}, {})'.format(self.images_dir, self.file_writer.fd.name)
 
 
-class DetectedCarDataset(YaYoloDataset):
+class DetectedCarDataset(Dataset):
 
     def __init__(self, json_file, transforms, batch_size, allow_unknown_make=False, allow_unknown_model=True):
         """
@@ -146,7 +146,7 @@ class DetectedCarDataset(YaYoloDataset):
                     continue
 
                 self.image_paths.append(image_path)
-                self.annotations.append([obj])
+                self.annotations.append(obj)
 
     def __getitem__(self, index):
         """
@@ -169,31 +169,19 @@ class DetectedCarDataset(YaYoloDataset):
     def __len__(self):
         return len(self.annotations)
 
-    def _get_class_id(self, annotations, b_i):
-        return 1
+    def _get_class_id(self, annotation):
+        raise NotImplementedError()
 
-    def get_ground_truth_boxes(self, annotations):
-        boxes_for_batch = []
-        for b_i in range(self.batch_size):
-            boxes_for_image = []
-            for o_i in range(len(annotations)):
+    def _annotation_to_groundtruth_boxes(self, annotation):
+        bbox = annotation['bbox']
+        class_id = self._get_class_id(annotation)
+        return [torch.tensor(bbox + [1, 1, class_id], dtype=torch.float)]
 
-                bbox_coordinates = annotations[o_i]['bbox']
-                if b_i < len(bbox_coordinates[0]):
-                    x = bbox_coordinates[0][b_i]
-                    y = bbox_coordinates[1][b_i]
-                    w = bbox_coordinates[2][b_i]
-                    h = bbox_coordinates[3][b_i]
-                    # annotated_category_id = int(annotations[o_i]['category_id'][b_i].item())
-                    # category_id = self.annotated_to_detected_class_idx[annotated_category_id]
-                    category_id = self._get_class_id(annotations, b_i)
-                    box = [x, y, w, h, 1, 1, category_id]
-                    boxes_for_image.append(box)
-
-            boxes_for_batch.append(boxes_for_image)
-
-        ground_truth_boxes = torch.tensor(boxes_for_batch)
-        return ground_truth_boxes
+    def collate_fn(self, batch):
+        images = torch.stack([item[0] for item in batch])
+        target = [self._annotation_to_groundtruth_boxes(item[1]) for item in batch]
+        image_paths = [item[2] for item in batch]
+        return images, target, image_paths
 
 
 class DetectedCareMakeDataset(DetectedCarDataset):
@@ -203,17 +191,8 @@ class DetectedCareMakeDataset(DetectedCarDataset):
         assert os.path.exists(car_makes_file), f"{car_makes_file} does not exist"
 
         with open(car_makes_file) as f:
-            self._class_names = [make.strip() for make in f.readlines()]
+            self.class_names = [make.strip() for make in f.readlines()]
 
-    def get_num_classes(self):
-        return len(self._class_names)
-
-    def get_class_names(self):
-        return self._class_names
-
-    def _get_class_id(self, annotations, b_i):
-        assert len(
-            annotations) == 1, "DetectedCareMakeDataset can only operate on images labels with exactly one annoation. Found {}".format(
-            len(annotations))
-        make = annotations[0]['make'][b_i]
-        return self._class_names.index(make)
+    def _get_class_id(self, annotation):
+        make = annotation['make']
+        return self.class_names.index(make)

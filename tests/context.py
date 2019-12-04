@@ -23,7 +23,6 @@ from yolo.yolo_builder import *
 from yolo.helpers import *
 from yolo.plotting import *
 from metrics.utils import *
-from metrics.mean_average_precision_helper import *
 
 
 

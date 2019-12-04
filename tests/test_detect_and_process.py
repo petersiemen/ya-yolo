@@ -22,7 +22,6 @@ def test_detect_and_process_for_detected_car_dataset():
         shutil.rmtree(detected_cars)
     os.mkdir(detected_cars)
 
-
     now = datetime.datetime.now()
     now_str = now.strftime("%Y-%m-%dT%H-%M-%S")
     detected_dataset_dir = os.path.join(detected_cars, now_str)
@@ -31,7 +30,6 @@ def test_detect_and_process_for_detected_car_dataset():
     os.mkdir(detected_dataset_images_dir)
 
     feed_file = os.path.join(detected_dataset_dir, "feed.json")
-
 
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
@@ -49,63 +47,9 @@ def test_detect_and_process_for_detected_car_dataset():
                                                                batch_size=batch_size,
                                                                debug=True)
             detect_and_process(model=model,
-                               ya_yolo_dataset=dataset,
+                               dataset=dataset,
                                processor=detected_dataset_helper.process_detections,
                                limit=10)
-
-
-def test_detect_process_for_map_computation():
-    detection_results_dir = os.path.join(HERE, 'output/input/detection-results')
-    ground_truth_dir = os.path.join(HERE, 'output/input/ground-truth')
-    images_optional_dir = os.path.join(HERE, 'output/input/images-optional')
-    if os.path.exists(detection_results_dir):
-        shutil.rmtree(detection_results_dir)
-    os.mkdir(detection_results_dir)
-    if os.path.exists(ground_truth_dir):
-        shutil.rmtree(ground_truth_dir)
-    os.mkdir(ground_truth_dir)
-    if os.path.exists(images_optional_dir):
-        shutil.rmtree(images_optional_dir)
-    os.mkdir(images_optional_dir)
-
-    cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
-    weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
-    namesfile = os.path.join(HERE, '../cfg/coco.names')
-    out_dir = os.path.join(HERE, 'output/input')
-
-    image_size = 416
-    image_and_target_transform = Compose([
-        ConvertXandYToCenterOfBoundingBox(),
-        AbsoluteToRelativeBoundingBox(),
-        SquashResize(image_size),
-        CocoToTensor()
-    ])
-    batch_size = 2
-    dataset = YaYoloCocoDataset(images_dir=COCO_IMAGES_DIR, annotations_file=COCO_ANNOTATIONS_FILE,
-                                transforms=image_and_target_transform,
-                                batch_size=batch_size)
-
-    conf_thres = 0.01
-    nms_thres = 0.5
-    with torch.no_grad():
-
-        model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size)
-        model.load_weights(weight_file)
-
-        mAPHelper = MeanAveragePrecisionHelper(out_dir=out_dir,
-                                               class_names=model.class_names,
-                                               image_size=image_size,
-                                               get_ground_thruth_boxes=dataset.get_ground_truth_boxes,
-                                               conf_thres=conf_thres,
-                                               nms_thres=nms_thres,
-                                               batch_size=batch_size,
-                                               keep_images=True,
-                                               plot=True
-                                               )
-        detect_and_process(model=model,
-                           ya_yolo_dataset=dataset,
-                           processor=mAPHelper.process_detections,
-                           limit=3)
 
 
 def test_detect_and_process_for_detected_car_dataset_with_missing_images():
@@ -148,6 +92,6 @@ def test_detect_and_process_for_detected_car_dataset_with_missing_images():
                                                                batch_size=batch_size,
                                                                debug=True)
             detect_and_process(model=model,
-                               ya_yolo_dataset=dataset,
+                               dataset=dataset,
                                processor=detected_dataset_helper.process_detections,
                                limit=10)

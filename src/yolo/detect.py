@@ -20,8 +20,7 @@ def detect_and_process(model,
         'start object detection run with processor'.format(processor))
 
     batch_size = dataset.batch_size
-    data_loader = DataLoader(dataset, batch_size=dataset.batch_size, shuffle=False,
-                             collate_fn=dataset.collate_fn)
+    data_loader = DataLoader(dataset, batch_size=dataset.batch_size, shuffle=False)
 
     cnt = 0
     detected = 0

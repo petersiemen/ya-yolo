@@ -4,7 +4,6 @@ import torch
 from torchvision.datasets import VOCDetection
 from PIL import Image
 
-from datasets.yayolo_dataset import YaYoloDataset
 import sys
 
 if sys.version_info[0] == 2:
@@ -13,7 +12,7 @@ else:
     import xml.etree.ElementTree as ET
 
 
-class YaYoloVocDataset(YaYoloDataset, VOCDetection):
+class YaYoloVocDataset(VOCDetection):
     def __init__(self, root_dir, batch_size, transforms, image_set='train', download=False):
         VOCDetection.__init__(self,
                               root=root_dir,

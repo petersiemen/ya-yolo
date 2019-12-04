@@ -1,16 +1,13 @@
 import torch
 from torchvision.datasets import ImageNet
 
-from datasets.yayolo_dataset import YaYoloDataset
 
-
-class YaYoloImageNetDataset(YaYoloDataset, ImageNet):
+class YaYoloImageNetDataset(ImageNet):
     def __init__(self, root, batch_size, transforms, split='train', download=False):
         ImageNet.__init__(self,
                           root=root, split=split, download=download,
                           transforms=transforms)
         self.batch_size = batch_size
-
 
     def __getitem__(self, index):
         """

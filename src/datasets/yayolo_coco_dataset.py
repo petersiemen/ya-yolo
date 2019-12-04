@@ -4,10 +4,8 @@ import torch
 from torchvision.datasets import CocoDetection
 from PIL import Image
 
-from datasets.yayolo_dataset import YaYoloDataset
 
-
-class YaYoloCocoDataset(YaYoloDataset, CocoDetection):
+class YaYoloCocoDataset(CocoDetection):
 
     def __init__(self, images_dir, annotations_file, transforms, batch_size):
         CocoDetection.__init__(self, root=images_dir, annFile=annotations_file,

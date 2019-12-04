@@ -72,8 +72,8 @@ def test_training_car_makes():
     lr = 0.001
     model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size)
     model.load_weights(weight_file)
-    model.set_num_classes(dataset.get_num_classes())
-    model.set_class_names(dataset.get_class_names())
+    model.set_num_classes(len(dataset.class_names))
+    model.set_class_names(dataset.class_names)
 
     summary_writer = SummaryWriter(comment=f' batch_size={batch_size} lr={lr}')
     train(model=model,
