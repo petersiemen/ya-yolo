@@ -26,8 +26,8 @@ def test_training():
     model.load_weights(weight_file)
 
     image_and_target_transform = Compose([
-        ConvertXandYToCenterOfBoundingBox(),
-        AbsoluteToRelativeBoundingBox(),
+        ConvertXandYToCenterOfBoundingBoxForCoco(),
+        AbsoluteToRelativeBoundingBoxForCoco(),
         SquashResize(416),
         CocoToTensor()
     ])

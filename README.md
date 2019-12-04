@@ -44,3 +44,30 @@ This goal of this implementation is:
 ### How to use ya-yolo as a pip dependency in your project
 
 
+#### Notes from Yolo papers how to train from scratch
+
+#####Pretraining (classification only)
+Dataset: ImageNet 1000-class competition dataset  
+Train first 20 convolutional layers followed by a average-pooling layer and a fully connected layer
+Achieving a top-5 accuracy (target label is among the top 5 predictions) on the ImageNet 2012 validation set
+
+#####Training
+
+Add four convolutional layers and two fully connected layers with randomly initialized weights
+Increase input resolution from 224x224 to 448x448
+Normalize bounding-box (width and height by image width and height, x and y offsets to grid cell location) so that 
+all output values are bound between 0 and 1
+
+  
+
+
+
+### Datasets Used
+ImageNet 2012:
+##### Classification Task
+1000 categories 
+train images: 1.2 mio
+test images: 150k
+validation images: 150k
+
+

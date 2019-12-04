@@ -7,6 +7,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../s
 
 from datasets.preprocess import *
 from datasets.yayolo_coco_dataset import YaYoloCocoDataset
+from datasets.yayolo_imagenet_dataset import YaYoloImageNetDataset
 from datasets.simple_car_dataset import *
 from datasets.detected_car_dataset import *
 from datasets.yayolo_voc_dataset import *

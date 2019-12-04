@@ -14,45 +14,49 @@ else:
 
 
 class YaYoloVocDataset(YaYoloDataset, VOCDetection):
-    def __init__(self, root_dir, batch_size, transforms):
+    def __init__(self, root_dir, batch_size, transforms, image_set='train', download=False):
         VOCDetection.__init__(self,
                               root=root_dir,
                               year='2012',
-                              image_set='train',
-                              download=False,
+                              image_set=image_set,
+                              download=download,
                               transforms=transforms)
         self.batch_size = batch_size
 
-    def get_ground_truth_boxes(self, annotations):
-        boxes_for_batch = []
-        for b_i in range(self.batch_size):
-            boxes_for_image = []
+    def _get_ground_truth_box(self, bndbox, width, height, name):
+        xmin = int(bndbox['xmin'])
+        ymin = int(bndbox['ymin'])
+        xmax = int(bndbox['xmax'])
+        ymax = int(bndbox['ymax'])
+        x = xmin + (xmax - xmin) / 2
+        y = ymin + (ymax - ymin) / 2
+        w = xmax - xmin
+        h = ymax - ymin
+        class_id = self._annotation_to_groundtruth_boxes(name)
+        return torch.tensor([x / width, y / height, w / width, h / height, 1, 1, class_id], dtype=torch.float)
 
-            number_of_objects_in_image = len(annotations['annotation']['object'][b_i]['name'])
-            for o_i in range(number_of_objects_in_image):
-                bbox_coordinates = annotations[o_i]['bbox']
-                xmin = annotations['annotation']['object'][b_i]['bndbox']['xmin'][o_i]
-                ymin = annotations['annotation']['object'][b_i]['bndbox']['ymin'][o_i]
-                xmax = annotations['annotation']['object'][b_i]['bndbox']['xmax'][o_i]
-                ymax = annotations['annotation']['object'][b_i]['bndbox']['ymax'][o_i]
+    def _annotation_to_groundtruth_boxes(self, annotation):
+        width, height = int(annotation['size']['width']), int(annotation['size']['height'])
 
-                # TODO ...
+        groundtruth_boxes = []
+        if isinstance(annotation['object'], list):
+            for i in range(len(annotation['object'])):
+                name = annotation['object'][i]['name']
+                groundtruth_boxes.append(
+                    self._get_ground_truth_box(annotation['object'][i]['bndbox'], width, height, name))
+        else:
+            name = annotation['object']['name']
+            groundtruth_boxes.append(self._get_ground_truth_box(annotation['object']['bndbox'], width, height, name))
+        return groundtruth_boxes
 
-                if b_i < len(bbox_coordinates[0]):
-                    x = bbox_coordinates[0][b_i].to(dtype=torch.float)
-                    y = bbox_coordinates[1][b_i].to(dtype=torch.float)
-                    w = bbox_coordinates[2][b_i].to(dtype=torch.float)
-                    h = bbox_coordinates[3][b_i].to(dtype=torch.float)
-                    annotated_category_id = int(annotations[o_i]['category_id'][b_i].item())
-                    category_id = self.annotated_to_detected_class_idx[annotated_category_id]
+    def collate_fn(self, batch):
+        images = torch.stack([item[0] for item in batch])
+        target = [self._annotation_to_groundtruth_boxes(item[1]['annotation']) for item in batch]
+        image_paths = [item[2] for item in batch]
+        return images, target, image_paths
 
-                    box = [x, y, w, h, 1, 1, category_id]
-                    boxes_for_image.append(box)
-
-            boxes_for_batch.append(boxes_for_image)
-
-        ground_truth_boxes = torch.tensor(boxes_for_batch)
-        return ground_truth_boxes
+    def _get_class_id(self, name):
+        return 2
 
     def __getitem__(self, index):
         """
@@ -69,7 +73,6 @@ class YaYoloVocDataset(YaYoloDataset, VOCDetection):
 
         if self.transforms is not None:
             img, target = self.transforms(img, target)
-
         return img, target, full_image_path
 
     def __len__(self):

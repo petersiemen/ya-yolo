@@ -1,6 +1,8 @@
 from .context import *
 
 HERE = os.path.dirname(os.path.realpath(__file__))
+COCO_IMAGES_DIR = os.path.join(HERE, '../../../datasets/coco-small/cocoapi/images/train2014')
+COCO_ANNOTATIONS_FILE = os.path.join(COCO_IMAGES_DIR, '../../annotations/instances_train2014_10_per_category.json')
 
 
 def test_simple_car_dataset():
@@ -93,20 +95,56 @@ def test_detected_car_make_dataset():
             break
 
 
+def test_coco_dataset():
+    batch_size = 3
+    image_and_target_transform = Compose([
+        SquashResize(416),
+        CocoToTensor()
+    ])
+
+    dataset = YaYoloCocoDataset(images_dir=COCO_IMAGES_DIR, annotations_file=COCO_ANNOTATIONS_FILE,
+                                transforms=image_and_target_transform,
+                                batch_size=batch_size)
+
+    dataloader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=False, collate_fn=dataset.collate_fn)
+
+    batch_i, (images, ground_truth_boxes, image_paths) = next(enumerate(dataloader))
+
+    plot_batch(None, ground_truth_boxes, images, dataset.class_names)
+
+
 def test_voc_dataset():
     image_and_target_transform = Compose([
         SquashResize(416),
         CocoToTensor()
     ])
-    batch_size = 2
-    dataset = YaYoloVocDataset(root_dir='/home/peter/datasets/VOC',
+    batch_size = 3
+    dataset = YaYoloVocDataset(root_dir='/home/peter/datasets/PascalVOC2012',
                                batch_size=batch_size,
-                               transforms=image_and_target_transform)
+                               transforms=image_and_target_transform,
+                               image_set='val',
+                               download=False)
+
+    dataloader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=False, collate_fn=dataset.collate_fn)
+
+    batch_i, (images, ground_truth_boxes, image_paths) = next(enumerate(dataloader))
+
+    plot_batch(None, ground_truth_boxes, images, None)
+
+
+def test_image_net():
+    image_and_target_transform = Compose([
+        SquashResize(416),
+        CocoToTensor()
+    ])
+    batch_size = 2
+    dataset = YaYoloImageNetDataset(root='/home/peter/datasets/ImageNet2012',
+                                    batch_size=batch_size,
+                                    transforms=image_and_target_transform,
+                                    download=True)
 
     dataloader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=False)
-
     batch_i, (images, annotations, image_paths) = next(enumerate(dataloader))
-    # ground_truth_boxes = dataset.get_ground_truth_boxes(annotations)
 
     pil_image = to_pil_image(images[0])
 

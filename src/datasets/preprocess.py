@@ -77,7 +77,7 @@ class PadToFit(object):
         return ImageOps.expand(resized, (left, top, right, bottom))
 
 
-class AbsoluteToRelativeBoundingBox(object):
+class AbsoluteToRelativeBoundingBoxForCoco(object):
 
     def __call__(self, img, target):
         orig_width, orig_height = img.size
@@ -91,7 +91,7 @@ class AbsoluteToRelativeBoundingBox(object):
         return img, target
 
 
-class ConvertXandYToCenterOfBoundingBox(object):
+class ConvertXandYToCenterOfBoundingBoxForCoco(object):
 
     def __call__(self, img, target):
         for i in range(len(target)):
@@ -99,7 +99,6 @@ class ConvertXandYToCenterOfBoundingBox(object):
             target[i]['bbox'][0] = target[i]['bbox'][2] / 2 + target[i]['bbox'][0]
             # y-coordinate of upper left  corner -> to y-coordinate of center of box
             target[i]['bbox'][1] = target[i]['bbox'][3] / 2 + target[i]['bbox'][1]  # upper left corner
-
         return img, target
 
 

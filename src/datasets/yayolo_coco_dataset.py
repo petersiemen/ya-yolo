@@ -12,34 +12,40 @@ class YaYoloCocoDataset(YaYoloDataset, CocoDetection):
     def __init__(self, images_dir, annotations_file, transforms, batch_size):
         CocoDetection.__init__(self, root=images_dir, annFile=annotations_file,
                                transforms=transforms)
-        self.annotated_classnames = {k: v['name'] for k, v in self.coco.cats.items()}
-        self.detected_classnames = [v['name'] for k, v in self.coco.cats.items()]
-
-        self.annotated_to_detected_class_idx = {k: i for i, (k, v)
-                                                in enumerate(self.coco.cats.items())}
+        self._annotated_classnames = {k: v['name'] for k, v in self.coco.cats.items()}
+        self._annotated_to_detected_class_idx = {k: i for i, (k, v)
+                                                 in enumerate(self.coco.cats.items())}
         self.batch_size = batch_size
+        self.class_names = [v['name'] for k, v in self.coco.cats.items()]
 
-    def get_ground_truth_boxes(self, annotations):
-        boxes_for_batch = []
-        for b_i in range(self.batch_size):
-            boxes_for_image = []
-            for o_i in range(len(annotations)):
-                bbox_coordinates = annotations[o_i]['bbox']
-                if b_i < len(bbox_coordinates[0]):
-                    x = bbox_coordinates[0][b_i].to(dtype=torch.float)
-                    y = bbox_coordinates[1][b_i].to(dtype=torch.float)
-                    w = bbox_coordinates[2][b_i].to(dtype=torch.float)
-                    h = bbox_coordinates[3][b_i].to(dtype=torch.float)
-                    annotated_category_id = int(annotations[o_i]['category_id'][b_i].item())
-                    category_id = self.annotated_to_detected_class_idx[annotated_category_id]
+    def _get_class_id(self, category_id):
+        return self._annotated_to_detected_class_idx[category_id]
 
-                    box = [x, y, w, h, 1, 1, category_id]
-                    boxes_for_image.append(box)
+    def _get_ground_truth_box(self, bbox, width, height, category_id):
+        upper_left_x = bbox[0]
+        upper_left_y = bbox[1]
+        w = bbox[2]
+        h = bbox[3]
+        x = w / 2 + upper_left_x
+        y = h / 2 + upper_left_y
+        class_id = self._get_class_id(category_id)
+        return torch.tensor([x / width, y / height, w / width, h / height, 1, 1, class_id], dtype=torch.float)
 
-            boxes_for_batch.append(boxes_for_image)
+    def _annotation_to_groundtruth_boxes(self, annotation):
+        groundtruth_boxes = []
+        for i in range(len(annotation)):
+            width, height = annotation[i]['image']['width'], annotation[i]['image']['height']
+            bbox = annotation[i]['bbox']
+            category_id = annotation[i]['category_id']
+            groundtruth_boxes.append(self._get_ground_truth_box(bbox, width, height, category_id))
 
-        ground_truth_boxes = torch.tensor(boxes_for_batch)
-        return ground_truth_boxes
+        return groundtruth_boxes
+
+    def collate_fn(self, batch):
+        images = torch.stack([item[0] for item in batch])
+        target = [self._annotation_to_groundtruth_boxes(item[1]) for item in batch]
+        image_paths = [item[2] for item in batch]
+        return images, target, image_paths
 
     def __getitem__(self, index):
         """
@@ -58,6 +64,10 @@ class YaYoloCocoDataset(YaYoloDataset, CocoDetection):
 
         full_image_path = os.path.join(self.root, path)
         img = Image.open(full_image_path).convert('RGB')
+
+        width, height = img.size
+        self._orig_width_and_height_into_annotation(target, width, height)
+
         if self.transforms is not None:
             img, target = self.transforms(img, target)
 
@@ -65,3 +75,8 @@ class YaYoloCocoDataset(YaYoloDataset, CocoDetection):
 
     def __len__(self):
         return CocoDetection.__len__(self)
+
+    def _orig_width_and_height_into_annotation(self, target, width, height):
+        for i in range(len(target)):
+            target[i]['image'] = {'width': width, 'height': height}
+        return target
