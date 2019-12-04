@@ -105,7 +105,7 @@ def run():
                         default=2,
                         help="number of batches to accumulate the losses over before backpropagating the gradients")
 
-    parser.add_argument("-cg", "--clip-gradients", dest="clip_gradients",
+    parser.add_argument("--clip-gradients", dest="clip_gradients",
                         action="store_true",
                         help="clip gradients")
 
