@@ -100,5 +100,5 @@ class Metrics:
         i = np.where(mrec[1:] != mrec[:-1])[0]
 
         # and sum (\Delta recall) * prec
-        ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
+        ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1]) * 100
         return ap
