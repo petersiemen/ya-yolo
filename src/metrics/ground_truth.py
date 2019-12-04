@@ -14,7 +14,7 @@ class GroundTruth:
 
     @staticmethod
     def from_ground_truths(image_paths, ground_truths):
-        batch_size = ground_truths.size(0)
+        batch_size = len(image_paths)
         for image_i in range(batch_size):
             image_id = image_path_to_image_id(image_paths[image_i])
             for ground_truth in ground_truths[image_i]:

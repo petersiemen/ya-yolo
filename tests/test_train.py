@@ -26,20 +26,18 @@ def test_training():
     model.load_weights(weight_file)
 
     image_and_target_transform = Compose([
-        ConvertXandYToCenterOfBoundingBoxForCoco(),
-        AbsoluteToRelativeBoundingBoxForCoco(),
         SquashResize(416),
         CocoToTensor()
     ])
 
-    ya_yolo_dataset = YaYoloCocoDataset(images_dir=COCO_IMAGES_DIR, annotations_file=COCO_ANNOTATIONS_FILE,
-                                        transforms=image_and_target_transform,
-                                        batch_size=batch_size)
+    dataset = YaYoloCocoDataset(images_dir=COCO_IMAGES_DIR, annotations_file=COCO_ANNOTATIONS_FILE,
+                                transforms=image_and_target_transform,
+                                batch_size=batch_size)
 
     summary_writer = SummaryWriter(comment=f' batch_size={batch_size} lr={lr}')
 
     train(model=model,
-          ya_yolo_dataset=ya_yolo_dataset,
+          dataset=dataset,
           model_dir=model_dir,
           summary_writer=summary_writer,
           epochs=1,

@@ -38,16 +38,16 @@ class YaYoloVocDataset(YaYoloDataset, VOCDetection):
     def _annotation_to_groundtruth_boxes(self, annotation):
         width, height = int(annotation['size']['width']), int(annotation['size']['height'])
 
-        groundtruth_boxes = []
+        ground_truth_boxes = []
         if isinstance(annotation['object'], list):
             for i in range(len(annotation['object'])):
                 name = annotation['object'][i]['name']
-                groundtruth_boxes.append(
+                ground_truth_boxes.append(
                     self._get_ground_truth_box(annotation['object'][i]['bndbox'], width, height, name))
         else:
             name = annotation['object']['name']
-            groundtruth_boxes.append(self._get_ground_truth_box(annotation['object']['bndbox'], width, height, name))
-        return groundtruth_boxes
+            ground_truth_boxes.append(self._get_ground_truth_box(annotation['object']['bndbox'], width, height, name))
+        return ground_truth_boxes
 
     def collate_fn(self, batch):
         images = torch.stack([item[0] for item in batch])

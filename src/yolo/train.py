@@ -36,37 +36,38 @@ def get_indices_for_center_of_bounding_boxes(num_anchors, grid_widths, x, y):
 
 
 def get_indices_for_center_of_ground_truth_bounding_boxes(ground_truth_boxes, grid_sizes):
-    batch_size = ground_truth_boxes.shape[0]
-    num_of_boxes_in_image_in_batch = ground_truth_boxes.shape[1]
+    batch_size = len(ground_truth_boxes)
     indices_for_batch = []
     for image_i in range(batch_size):
         indices_for_image = []
-        for box_j in range(num_of_boxes_in_image_in_batch):
-            x = ground_truth_boxes[image_i, box_j, 0]
-            y = ground_truth_boxes[image_i, box_j, 1]
+        num_of_boxes_in_image = len(ground_truth_boxes[image_i])
+        for box_j in range(num_of_boxes_in_image):
+            x = ground_truth_boxes[image_i][box_j][0]
+            y = ground_truth_boxes[image_i][box_j][1]
             indices = list(get_indices_for_center_of_bounding_boxes(num_anchors=3,
                                                                     grid_widths=grid_sizes,
                                                                     x=x,
                                                                     y=y))
             indices_for_image.append(indices)
-        indices_for_batch.append(indices_for_image)
-    return torch.tensor(indices_for_batch).to(DEVICE)
+        indices_for_batch.append(torch.tensor(indices_for_image).to(DEVICE))
+    return indices_for_batch
 
 
 def get_indices_for_highest_iou_with_ground_truth_bounding_box(indices, ground_truth_boxes, coordinates):
-    batch_size = ground_truth_boxes.shape[0]
-    num_of_boxes_in_image_in_batch = ground_truth_boxes.shape[1]
+    batch_size = len(ground_truth_boxes)
+    # num_of_boxes_in_image_in_batch = ground_truth_boxes.shape[1]
     indices_for_batch = []
     for image_i in range(batch_size):
         indices_for_image = []
-        for box_j in range(num_of_boxes_in_image_in_batch):
-            candidate_coordinates = coordinates[image_i, indices[image_i, box_j]]
-            ious = [boxes_iou_for_single_boxes(ground_truth_boxes[image_i, box_j], candidate_box) for candidate_box in
+        num_of_boxes_in_image = len(ground_truth_boxes[image_i])
+        for box_j in range(num_of_boxes_in_image):
+            candidate_coordinates = coordinates[image_i, indices[image_i][box_j]]
+            ious = [boxes_iou_for_single_boxes(ground_truth_boxes[image_i][box_j], candidate_box) for candidate_box in
                     candidate_coordinates]
             max_iou_idx = np.argmax(ious)
-            indices_for_image.append(indices[image_i, box_j, max_iou_idx])
+            indices_for_image.append(indices[image_i][box_j][max_iou_idx])
         indices_for_batch.append(indices_for_image)
-    return torch.tensor(indices_for_batch).to(DEVICE)
+    return indices_for_batch
 
 
 def to_plottable_boxes(obj_mask, coordinates, class_scores, confidence):
@@ -110,27 +111,29 @@ def build_targets(coordinates, class_scores, ground_truth_boxes, grid_sizes):
         batch_indices_of_ground_truth_boxes, ground_truth_boxes, coordinates
     )
 
-    for image_i in range(batch_indices_with_highest_iou.size(0)):
-        for box_j in range(batch_indices_with_highest_iou.size(1)):
-            idx = batch_indices_with_highest_iou[image_i, box_j]
+    for image_i in range(batch_size):
+        num_of_boxes_in_image = len(ground_truth_boxes[image_i])
+        for box_j in range(num_of_boxes_in_image):
+            idx = batch_indices_with_highest_iou[image_i][box_j]
             obj_mask[image_i, idx] = True
             noobj_mask[image_i, idx] = False
 
-            ground_truth_box = ground_truth_boxes[image_i, box_j]
+            ground_truth_box = ground_truth_boxes[image_i][box_j]
             target_coordinates[image_i, idx] = ground_truth_box[0:4]
             target_confidence[image_i, idx] = 1
             target_class_scores[image_i, idx, int(ground_truth_box[6])] = 1
 
-    for image_i in range(batch_indices_of_ground_truth_boxes.size(0)):
-        for box_j in range(batch_indices_of_ground_truth_boxes.size(1)):
-            for idx in batch_indices_of_ground_truth_boxes[image_i, box_j]:
+    for image_i in range(batch_size):
+        num_of_boxes_in_image = len(ground_truth_boxes[image_i])
+        for box_j in range(num_of_boxes_in_image):
+            for idx in batch_indices_of_ground_truth_boxes[image_i][box_j]:
                 cls_mask[image_i, idx] = True
 
     return obj_mask, noobj_mask, cls_mask, target_coordinates, target_confidence, target_class_scores
 
 
 def train(model,
-          ya_yolo_dataset,
+          dataset,
           model_dir,
           summary_writer,
           epochs,
@@ -160,12 +163,12 @@ def train(model,
     optimizer = torch.optim.Adam(model.get_trainable_parameters(), lr=lr)
     grid_sizes = model.grid_sizes
 
-    data_loader = DataLoader(ya_yolo_dataset, batch_size=ya_yolo_dataset.batch_size, shuffle=True)
-    batch_size = ya_yolo_dataset.batch_size
+    data_loader = DataLoader(dataset, batch_size=dataset.batch_size, shuffle=True, collate_fn=dataset.collate_fn)
+    batch_size = dataset.batch_size
     class_names = model.class_names
 
     for epoch in range(1, epochs + 1):
-        for batch_i, (images, annotations, image_paths) in tqdm(enumerate(data_loader), total=total):
+        for batch_i, (images, ground_truth_boxes, image_paths) in tqdm(enumerate(data_loader), total=total):
 
             images = images.to(DEVICE)
             if images.shape[0] != batch_size:
@@ -175,9 +178,6 @@ def train(model,
                 continue
 
             coordinates, class_scores, confidence = model(images)
-
-            ground_truth_boxes = ya_yolo_dataset.get_ground_truth_boxes(annotations).to(DEVICE)
-            num_of_boxes_in_image_in_batch = ground_truth_boxes.shape[1]
 
             obj_mask, noobj_mask, cls_mask, target_coordinates, target_confidence, target_class_scores = build_targets(
                 coordinates, class_scores, ground_truth_boxes, grid_sizes)
@@ -208,9 +208,6 @@ def train(model,
             metrics.add_detections_for_batch(detection_map_objects, ground_truth_map_objects, iou_thres=iou_thres)
 
             if debug:
-                logger.info('processed batch {} with {} annotated objects per image ...'.format(batch_i + 1,
-                                                                                                num_of_boxes_in_image_in_batch))
-
                 plot_batch(detections, ground_truth_boxes, images, class_names)
 
             loss = yolo_loss.get()
@@ -226,7 +223,6 @@ def train(model,
                 optimizer.zero_grad()
 
             del images
-            del annotations
             del ground_truth_boxes
 
             yolo_loss.capture(summary_writer, batch_i, during='train')

@@ -31,19 +31,19 @@ class YaYoloCocoDataset(YaYoloDataset, CocoDetection):
         class_id = self._get_class_id(category_id)
         return torch.tensor([x / width, y / height, w / width, h / height, 1, 1, class_id], dtype=torch.float)
 
-    def _annotation_to_groundtruth_boxes(self, annotation):
-        groundtruth_boxes = []
+    def _annotation_to_ground_truth_boxes(self, annotation):
+        ground_truth_boxes = []
         for i in range(len(annotation)):
             width, height = annotation[i]['image']['width'], annotation[i]['image']['height']
             bbox = annotation[i]['bbox']
             category_id = annotation[i]['category_id']
-            groundtruth_boxes.append(self._get_ground_truth_box(bbox, width, height, category_id))
+            ground_truth_boxes.append(self._get_ground_truth_box(bbox, width, height, category_id))
 
-        return groundtruth_boxes
+        return ground_truth_boxes
 
     def collate_fn(self, batch):
         images = torch.stack([item[0] for item in batch])
-        target = [self._annotation_to_groundtruth_boxes(item[1]) for item in batch]
+        target = [self._annotation_to_ground_truth_boxes(item[1]) for item in batch]
         image_paths = [item[2] for item in batch]
         return images, target, image_paths
 
