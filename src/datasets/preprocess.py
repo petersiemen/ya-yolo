@@ -76,31 +76,6 @@ class PadToFit(object):
         resized = F.resize(image, (new_h, new_w), self.interpolation)
         return ImageOps.expand(resized, (left, top, right, bottom))
 
-#
-# class AbsoluteToRelativeBoundingBoxForCoco(object):
-#
-#     def __call__(self, img, target):
-#         orig_width, orig_height = img.size
-#         for i in range(len(target)):
-#             if 'bbox' in target[i]:
-#                 target[i]['bbox'][0] = target[i]['bbox'][0] / orig_width  # x
-#                 target[i]['bbox'][1] = target[i]['bbox'][1] / orig_height  # y
-#                 target[i]['bbox'][2] = target[i]['bbox'][2] / orig_width  # w
-#                 target[i]['bbox'][3] = target[i]['bbox'][3] / orig_height  # h
-#
-#         return img, target
-
-#
-# class ConvertXandYToCenterOfBoundingBoxForCoco(object):
-#
-#     def __call__(self, img, target):
-#         for i in range(len(target)):
-#             # x-coordinate of upper left  corner -> to x-coordinate of center of box
-#             target[i]['bbox'][0] = target[i]['bbox'][2] / 2 + target[i]['bbox'][0]
-#             # y-coordinate of upper left  corner -> to y-coordinate of center of box
-#             target[i]['bbox'][1] = target[i]['bbox'][3] / 2 + target[i]['bbox'][1]  # upper left corner
-#         return img, target
-
 
 class CocoToTensor(object):
     """Convert ndarrays in sample to Tensors."""

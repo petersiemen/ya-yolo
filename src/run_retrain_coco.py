@@ -47,8 +47,6 @@ def train_coco(coco_images_dir,
 
 
     image_and_target_transform = Compose([
-        ConvertXandYToCenterOfBoundingBox(),
-        AbsoluteToRelativeBoundingBox(),
         SquashResize(416),
         CocoToTensor()
     ])
@@ -60,7 +58,7 @@ def train_coco(coco_images_dir,
 
     summary_writer = SummaryWriter(comment=f' evaluate={batch_size}')
     train(model=model,
-          ya_yolo_dataset=dataset,
+          dataset=dataset,
           model_dir=model_dir,
           summary_writer=summary_writer,
           epochs=epochs,

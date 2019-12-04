@@ -17,15 +17,13 @@ def test_evaluate():
     model.load_weights(weight_file)
 
     image_and_target_transform = Compose([
-        ConvertXandYToCenterOfBoundingBox(),
-        AbsoluteToRelativeBoundingBox(),
         SquashResize(416),
         CocoToTensor()
     ])
 
-    ya_yolo_dataset = YaYoloCocoDataset(images_dir=COCO_IMAGES_DIR, annotations_file=COCO_ANNOTATIONS_FILE,
-                                        transforms=image_and_target_transform,
-                                        batch_size=batch_size)
+    dataset = YaYoloCocoDataset(images_dir=COCO_IMAGES_DIR, annotations_file=COCO_ANNOTATIONS_FILE,
+                                transforms=image_and_target_transform,
+                                batch_size=batch_size)
 
     summary_writer = SummaryWriter(comment=f' evaluate={batch_size}')
     images_result_dir = os.path.join(HERE, 'output/evaluated')
@@ -36,7 +34,7 @@ def test_evaluate():
     else:
         os.mkdir(images_result_dir)
 
-    evaluate(model, ya_yolo_dataset, summary_writer, images_result_dir,
+    evaluate(model, dataset, summary_writer, images_result_dir,
              iou_thres=0.5,
              conf_thres=0.9,
              nms_thres=0.5,

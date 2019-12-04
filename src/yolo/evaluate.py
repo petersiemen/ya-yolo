@@ -6,7 +6,6 @@ from tqdm import tqdm
 
 from device import DEVICE
 from logging_config import *
-from metrics.bounding_box import BoundingBox
 from metrics.detection import Detection
 from metrics.ground_truth import GroundTruth
 from metrics.metrics import Metrics
@@ -19,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 def evaluate(model,
-             ya_yolo_dataset,
+             dataset,
              summary_writer,
              images_results_dir,
              iou_thres, conf_thres, nms_thres,
@@ -38,26 +37,15 @@ def evaluate(model,
     model.to(DEVICE)
     model.eval()
     with torch.no_grad():
-        data_loader = DataLoader(ya_yolo_dataset, batch_size=ya_yolo_dataset.batch_size, shuffle=True)
+        data_loader = DataLoader(dataset, batch_size=dataset.batch_size, shuffle=True, collate_fn=dataset.collate_fn)
         class_names = model.class_names
 
         total = limit if limit is not None else len(data_loader)
-        for batch_i, (images, annotations, image_paths) in tqdm(enumerate(data_loader), total=total):
-            if len(images) != ya_yolo_dataset.batch_size:
-                logger.warning(
-                    f'batch {batch_i} does not contain {ya_yolo_dataset.batch_size} training samples. skipping this batch')
-                continue
-
+        for batch_i, (images, ground_truth_boxes, image_paths) in tqdm(enumerate(data_loader), total=total):
             images = images.to(DEVICE)
-            ground_truth_boxes = ya_yolo_dataset.get_ground_truth_boxes(annotations)
 
             coordinates, class_scores, confidence = model(images)
 
-            # converting the class scores into a probability distribution
-            # this only has an effect on how what probability we 'plot' into the resulting images for
-            # debugging
-            # the nms function below will just pick the maximum class score
-            # class_scores = torch.nn.Softmax(dim=2)(class_scores)
             class_scores = torch.sigmoid(class_scores)
 
             prediction = torch.cat((coordinates, confidence.unsqueeze(-1), class_scores), -1)
