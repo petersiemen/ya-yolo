@@ -119,17 +119,21 @@ def test_voc_dataset():
         CocoToTensor()
     ])
     batch_size = 3
+    namesfile = os.path.join(HERE, '../cfg/coco.names')
+    class_names = load_class_names(namesfile)
+
     dataset = YaYoloVocDataset(root_dir='/home/peter/datasets/PascalVOC2012',
                                batch_size=batch_size,
                                transforms=image_and_target_transform,
                                image_set='val',
-                               download=False)
+                               download=False,
+                               class_names=class_names)
 
     dataloader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=False, collate_fn=dataset.collate_fn)
 
     batch_i, (images, ground_truth_boxes, image_paths) = next(enumerate(dataloader))
 
-    plot_batch(None, ground_truth_boxes, images, None)
+    plot_batch(None, ground_truth_boxes, images, class_names)
 
 
 def test_image_net():

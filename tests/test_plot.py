@@ -8,15 +8,13 @@ COCO_ANNOTATIONS_FILE = os.path.join(COCO_IMAGES_DIR, '../../annotations/instanc
 def test_plot_boxes():
     batch_size = 1
     image_and_target_transform = Compose([
-        ConvertXandYToCenterOfBoundingBox(),
-        AbsoluteToRelativeBoundingBox(),
         SquashResize(416),
         CocoToTensor()
     ])
 
-    ya_yolo_dataset = YaYoloCocoDataset(images_dir=COCO_IMAGES_DIR, annotations_file=COCO_ANNOTATIONS_FILE,
-                                        transforms=image_and_target_transform,
-                                        batch_size=batch_size)
+    dataset = YaYoloCocoDataset(images_dir=COCO_IMAGES_DIR, annotations_file=COCO_ANNOTATIONS_FILE,
+                                transforms=image_and_target_transform,
+                                batch_size=batch_size)
 
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
@@ -25,8 +23,9 @@ def test_plot_boxes():
     class_names = yolo.class_names
     yolo.load_weights(weight_file)
 
-    data_loader = DataLoader(dataset=ya_yolo_dataset, batch_size=batch_size, shuffle=True)
-    batch_i, (images, annotations, image_paths) = next(enumerate(data_loader))
+    data_loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True,
+                             collate_fn=dataset.collate_fn)
+    batch_i, (images, ground_truth_boxes, image_paths) = next(enumerate(data_loader))
 
     coordinates, class_scores, confidence = yolo(images)
     prediction = torch.cat((coordinates, confidence.unsqueeze(-1), class_scores), -1)
@@ -34,8 +33,7 @@ def test_plot_boxes():
                                      conf_thres=0.9,
                                      nms_thres=0.5)
 
-    grund_truth_boxes = ya_yolo_dataset.get_ground_truth_boxes(annotations)
     plot_batch(detections,
-               grund_truth_boxes,
+               ground_truth_boxes,
                images,
                class_names)

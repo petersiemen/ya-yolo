@@ -13,7 +13,7 @@ else:
 
 
 class YaYoloVocDataset(VOCDetection):
-    def __init__(self, root_dir, batch_size, transforms, image_set='train', download=False):
+    def __init__(self, root_dir, batch_size, transforms, image_set='train', download=False, class_names=None):
         VOCDetection.__init__(self,
                               root=root_dir,
                               year='2012',
@@ -21,6 +21,7 @@ class YaYoloVocDataset(VOCDetection):
                               download=download,
                               transforms=transforms)
         self.batch_size = batch_size
+        self.class_names = class_names
 
     def _get_ground_truth_box(self, bndbox, width, height, name):
         xmin = int(bndbox['xmin'])
@@ -31,7 +32,7 @@ class YaYoloVocDataset(VOCDetection):
         y = ymin + (ymax - ymin) / 2
         w = xmax - xmin
         h = ymax - ymin
-        class_id = self._annotation_to_groundtruth_boxes(name)
+        class_id = self._get_class_id(name)
         return torch.tensor([x / width, y / height, w / width, h / height, 1, 1, class_id], dtype=torch.float)
 
     def _annotation_to_groundtruth_boxes(self, annotation):
@@ -55,7 +56,10 @@ class YaYoloVocDataset(VOCDetection):
         return images, target, image_paths
 
     def _get_class_id(self, name):
-        return 2
+        if self.class_names is not None:
+            return self.class_names.index(name)
+        else:
+            return -1
 
     def __getitem__(self, index):
         """
