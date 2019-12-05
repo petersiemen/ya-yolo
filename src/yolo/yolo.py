@@ -15,6 +15,7 @@ class Yolo(nn.Module):
         super(Yolo, self).__init__()
         self.models, self.grid_sizes = YoloBuilder.run(cfg_file, batch_size, coreml_mode)
         self.output_tensor_length = self.get_output_tensor_length()
+        self.coreml_mode = coreml_mode
 
         self.class_names = load_class_names(namesfile=namesfile)
         # TODO move this somewhere else when you write the code to customize the model to
@@ -98,14 +99,23 @@ class Yolo(nn.Module):
                 x = model(x)
                 outputs[idx] = x
             elif isinstance(model, EagerYoloLayer):
-                co, cs, pc = model(x)
-                coordinates.append(co)
-                class_scores.append(cs)
-                confidence.append(pc)
+                if model.coreml_mode:
+                    co, cs = model(x)
+                    coordinates.append(co)
+                    class_scores.append(cs)
+                else:
+                    co, cs, pc = model(x)
+                    coordinates.append(co)
+                    class_scores.append(cs)
+                    confidence.append(pc)
 
-        return torch.cat(coordinates, 1), \
-               torch.cat(class_scores, 1), \
-               torch.cat(confidence, 1)
+        if self.coreml_mode:
+            return torch.cat(coordinates, 1).to(dtype=torch.double), \
+                   torch.cat(class_scores, 1).to(dtype=torch.double)
+        else:
+            return torch.cat(coordinates, 1), \
+                   torch.cat(class_scores, 1), \
+                   torch.cat(confidence, 1)
 
     def load_weights(self, weightfile):
         fp = open(weightfile, 'rb')

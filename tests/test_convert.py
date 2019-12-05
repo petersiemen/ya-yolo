@@ -71,7 +71,9 @@ def test_export_yolo_to_coreml_with_nms():
             "green_bias": 0,
             "blue_bias": 0}
     )
-    builder = coremltools.models.neural_network.NeuralNetworkBuilder(spec=coreml_model.get_spec())
+    builder = coremltools.models.neural_network.NeuralNetworkBuilder(spec=coreml_model.get_spec(),
+                                                                     disable_rank5_shape_mapping=True
+                                                                     )
 
     class_names = load_class_names(namesfile)
     builder.add_nms(name='nms',
@@ -83,7 +85,7 @@ def test_export_yolo_to_coreml_with_nms():
                     )
 
     builder.set_output(output_names=['coordinates', 'confidence'],
-                       output_dims=[(0, 4,), (0, 80,)])
+                       output_dims=[(0, 4), (0, 80)])
 
     del builder.spec.description.output[2]
 
@@ -93,17 +95,22 @@ def test_export_yolo_to_coreml_with_nms():
     }
     builder.spec.description.metadata.userDefined.update(user_defined_metadata)
 
-    flexible_shape_utils.set_multiarray_ndshape_range(spec=builder.spec,
-                                                      feature_name="coordinates",
-                                                      lower_bounds=[0, 4],
-                                                      upper_bounds=[-1, 4])
+    # flexible_shape_utils.set_multiarray_ndshape_range(spec=builder.spec,
+    #                                                   feature_name="coordinates",
+    #                                                   lower_bounds=[0, 4],
+    #                                                   upper_bounds=[-1, 4])
+    #
+    # flexible_shape_utils.set_multiarray_ndshape_range(spec=builder.spec,
+    #                                                   feature_name="confidence",
+    #                                                   lower_bounds=[0, 80],
+    #                                                   upper_bounds=[-1, 80])
+    #
+    # del builder.spec.description.output[0].type.multiArrayType.shape[0]
+    # del builder.spec.description.output[0].type.multiArrayType.shape[0]
+    # del builder.spec.description.output[1].type.multiArrayType.shape[0]
+    # del builder.spec.description.output[1].type.multiArrayType.shape[0]
 
-    flexible_shape_utils.set_multiarray_ndshape_range(spec=builder.spec,
-                                                      feature_name="confidence",
-                                                      lower_bounds=[0, 80],
-                                                      upper_bounds=[-1, 80])
-
-    print(builder.spec.description)
+    print(builder.spec.description.output)
     save_spec(builder.spec, core_ml_with_nms_filename)
 
     shutil.copy(core_ml_with_nms_filename, core_ml_with_nms_filename_in_yolo_ios)
@@ -141,3 +148,21 @@ def test_predict_with_coreml_with_nms():
 
     # resized_and_tensor, _ = transform_resize_and_to_tensor(image, {})
     # plot_batch(detections, None, resized_and_tensor.unsqueeze(0), class_names)
+
+
+def test_predict_dices():
+    model = coremltools.models.MLModel(
+        os.path.join(HERE,'../../yolo-ios/YoloIOS/Models/DiceDetector.mlmodel')
+    )
+
+    transform_resize = Compose([
+        SquashResize(736),
+    ])
+    image = load_image_file(os.path.join(HERE, './images/dices.jpg'))
+    resized, _ = transform_resize(image, {})
+    # images = images.unsqueeze(0)
+    output = model.predict({'image': resized}, usesCPUOnly=True)
+    print(output)
+
+    coordinates = output["coordinates"]
+    class_scores = output["confidence"]

@@ -7,6 +7,10 @@ class YoloBuilder:
 
     @staticmethod
     def run(cfg_file, batch_size, coreml_mode=False):
+        if coreml_mode:
+            assert batch_size == 1, f"when coreml_mode is active only a batch size of 1 is supported. " \
+                                    f"now it is set to {batch_size} "
+
         blocks = parse_cfg(cfg_file)
 
         grid_sizes = []
@@ -27,7 +31,7 @@ class YoloBuilder:
                 is_pad = int(block['pad'])
                 padding = (kernel_size - 1) // 2 if is_pad else 0
                 activation = block['activation']
-                layer = ConvolutionalLayer(layer_idx=idx-1, in_channels=channels, height=height, width=width,
+                layer = ConvolutionalLayer(layer_idx=idx - 1, in_channels=channels, height=height, width=width,
                                            out_channels=filters, kernel_size=kernel_size, stride=stride,
                                            padding=padding, batch_normalize=batch_normalize, activation=activation
                                            )
