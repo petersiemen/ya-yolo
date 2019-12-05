@@ -39,3 +39,5 @@ def onnx_to_coreml(onnx_filename, core_ml_filename):
     save_spec(builder.spec, core_ml_filename)
 
     coremltools.models.neural_network.printer.print_network_spec(builder.spec)
+
+

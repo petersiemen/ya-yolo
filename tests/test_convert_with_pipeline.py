@@ -5,7 +5,7 @@ import coremltools
 from coremltools.models.pipeline import *
 
 HERE = os.path.dirname(os.path.realpath(__file__))
-#cfg_file = os.path.join(HERE, '../cfg/mini-yolov3.cfg')
+# cfg_file = os.path.join(HERE, '../cfg/mini-yolov3.cfg')
 cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
 weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
 namesfile = os.path.join(HERE, '../cfg/coco.names')
@@ -43,10 +43,6 @@ def test_convert_to_onnx():
     )
 
     yolo_model = coremltools.models.MLModel(coreml_model.get_spec())
-
-    # yolo_output = yolo_model._spec.description.output
-    # yolo_output[0].type.multiArrayType.shape[:] = [80, 10647,1]
-    # yolo_output[1].type.multiArrayType.shape[:] = [4, 10647, 1]
 
     yolo_model.save(coreml_filename)
     shutil.copy(coreml_filename, coreml_filename_in_yolo_ios)
