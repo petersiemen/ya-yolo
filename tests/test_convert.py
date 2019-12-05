@@ -8,10 +8,10 @@ onnx_filename = os.path.join(HERE, 'output/yolo.onnx')
 coreml_filename = os.path.join(HERE, 'output/Yolo.mlmodel')
 core_ml_with_nms_filename = os.path.join(HERE, 'output/YoloNms.mlmodel')
 
-def test_convert():
-    dummy_input = torch.randn(1, 3, 416, 416, requires_grad=True)
 
-    yolo = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=1)
+def test_convert_to_coreml_via_onnx():
+    dummy_input = torch.randn(1, 3, 416, 416, requires_grad=True)
+    yolo = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=1, coreml_mode=True)
     yolo.load_weights(weight_file)
     pytorch_to_onnx(yolo, dummy_input, onnx_filename)
     onnx_to_coreml(onnx_filename, coreml_filename)
