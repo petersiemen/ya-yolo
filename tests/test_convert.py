@@ -26,8 +26,7 @@ def test_predict_with_coreml_without_nms():
     class_names = load_class_names(namesfile)
 
     transform_resize = Compose([
-        SquashResize(416),
-        # CocoToTensor()
+        SquashResize(416)
     ])
 
     transform_resize_and_to_tensor = Compose([

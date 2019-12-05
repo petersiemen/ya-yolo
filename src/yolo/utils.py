@@ -387,7 +387,7 @@ def non_max_suppression(prediction, conf_thres=0.5, nms_thres=0.5):
         image_pred = image_pred[(-det_conf).argsort()]
         class_confs, class_preds = image_pred[:, 5:].max(1, keepdim=True)
 
-        detections = torch.cat((image_pred[:, :5], class_confs.float(), class_preds.float()), 1)
+        detections = torch.cat((image_pred[:, :5], class_confs.to(image_pred.dtype), class_preds.to(image_pred.dtype)), 1)
         # Perform non-maximum suppression
         keep_boxes = []
         while detections.size(0):

@@ -99,19 +99,20 @@ class Yolo(nn.Module):
                 x = model(x)
                 outputs[idx] = x
             elif isinstance(model, EagerYoloLayer):
-                if model.coreml_mode:
-                    co, cs = model(x)
-                    coordinates.append(co)
-                    class_scores.append(cs)
-                else:
-                    co, cs, pc = model(x)
-                    coordinates.append(co)
-                    class_scores.append(cs)
-                    confidence.append(pc)
+                # if model.coreml_mode:
+                #     co, cs = model(x)
+                #     coordinates.append(co)
+                #     class_scores.append(cs)
+                # else:
+                co, cs, pc = model(x)
+                coordinates.append(co)
+                class_scores.append(cs)
+                confidence.append(pc)
 
         if self.coreml_mode:
-            return torch.cat(coordinates, 1).to(dtype=torch.double), \
-                   torch.cat(class_scores, 1).to(dtype=torch.double)
+            return torch.cat(coordinates, 1).to(dtype=torch.double).view(-1,4), \
+                   torch.cat(class_scores, 1).to(dtype=torch.double).view(-1,self.num_classes), \
+                   torch.cat(confidence, 1).to(dtype=torch.double) #.to(dtype=torch.double)
         else:
             return torch.cat(coordinates, 1), \
                    torch.cat(class_scores, 1), \
