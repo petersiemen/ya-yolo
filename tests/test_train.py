@@ -47,9 +47,12 @@ def test_training():
           iou_thres=0.5,
           lambda_coord=5,
           lambda_no_obj=0.5,
-          limit=2,
+          gradient_accumulations=1,
+          clip_gradients=True,
+          limit=3,
           debug=True,
-          print_every=10)
+          print_every=10,
+          save_every=1)
 
     summary_writer.close()
 

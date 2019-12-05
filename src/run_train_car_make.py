@@ -22,6 +22,7 @@ def train_car_make(car_make_json_file,
                    lr,
                    conf_thres,
                    gradient_accumulations,
+                   clip_gradients,
                    epochs,
                    limit,
                    log_every,
@@ -40,10 +41,10 @@ def train_car_make(car_make_json_file,
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
     namesfile = os.path.join(HERE, '../cfg/coco.names')
 
-    model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size, training_mode=True)
+    model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size, coreml_mode=False)
     model.load_weights(weight_file)
-    model.set_num_classes(dataset.get_num_classes())
-    model.set_class_names(dataset.get_class_names())
+    model.set_num_classes(len(dataset.class_names))
+    model.set_class_names(dataset.class_names)
     if parameters is not None:
         logger.info(f"loading model parameters from {parameters}")
         model.load_state_dict(
@@ -52,7 +53,7 @@ def train_car_make(car_make_json_file,
 
     summary_writer = SummaryWriter(comment=f' evaluate={batch_size}')
     train(model=model,
-          ya_yolo_dataset=dataset,
+          dataset=dataset,
           model_dir=model_dir,
           summary_writer=summary_writer,
           epochs=epochs,
@@ -63,6 +64,7 @@ def train_car_make(car_make_json_file,
           lambda_coord=5,
           lambda_no_obj=0.5,
           gradient_accumulations=gradient_accumulations,
+          clip_gradients=clip_gradients,
           limit=limit,
           debug=False,
           print_every=log_every,
@@ -78,27 +80,31 @@ def run():
     parser.add_argument("-b", "--batch-size", dest="batch_size",
                         type=int,
                         default=8,
-                        help="batch_size for reading the raw dataset (default: 5)")
+                        help="batch_size for reading the raw dataset (default: 8)")
 
     parser.add_argument("-r", "--learning-rate", dest="lr",
                         type=float,
                         default=0.001,
-                        help="learning-rate")
+                        help="learning-rate (default 0.001)")
 
     parser.add_argument("-c", "--conf-thres", dest="conf_thres",
                         type=float,
                         default=0.5,
-                        help="confidence threshold used in nms")
+                        help="confidence threshold used in nms (default 0.5)")
 
     parser.add_argument("-g", "--gradient-accumulations", dest="gradient_accumulations",
                         type=int,
                         default=2,
-                        help="number of batches to accumulate the losses over before backpropagating the gradients")
+                        help="number of batches to accumulate the losses over before backpropagating the gradients (default 2)")
+
+    parser.add_argument("--clip-gradients", dest="clip_gradients",
+                        action="store_true",
+                        help="clip gradients")
 
     parser.add_argument("-e", "--epochs", dest="epochs",
                         type=int,
                         default=5,
-                        help="number of epochs to train")
+                        help="number of epochs to train (default 5)")
 
     parser.add_argument("-l", "--limit", dest="limit",
                         type=int,
@@ -108,17 +114,17 @@ def run():
     parser.add_argument("-n", "--log-every", dest="log_every",
                         type=int,
                         default=100,
-                        help="log ever n-th batch")
+                        help="log ever n-th batch (default 100)")
 
     parser.add_argument("-m", "--model-dir", dest="model_dir",
                         default='models',
                         metavar="FILE",
-                        help="location where to store the trained pytorch models")
+                        help="location where to store the trained pytorch models (default models)")
 
     parser.add_argument("-s", "--save-every", dest="save_every",
-                        default=None,
+                        default=500,
                         type=int,
-                        help="after how many batches we are saving the models")
+                        help="after how many batches we are saving the models (default 500)")
 
     parser.add_argument("-p", "--parameters", dest="parameters",
                         default=None,
@@ -135,6 +141,7 @@ def run():
         lr = args.lr
         conf_thres = args.conf_thres
         gradient_accumulations = args.gradient_accumulations
+        clip_gradients = args.clip_gradients
         epochs = args.epochs
         log_every = args.log_every
         limit = args.limit
@@ -147,6 +154,7 @@ def run():
                        lr,
                        conf_thres,
                        gradient_accumulations,
+                       clip_gradients,
                        epochs,
                        limit,
                        log_every,
