@@ -157,4 +157,5 @@ def test_predict_with_pipeline():
     class_scores = output["confidence"]
     # confidence = output["confidence"]
 
+    
     print()
