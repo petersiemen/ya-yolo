@@ -31,8 +31,8 @@ def _get_df():
             ws.append(float(obj['bbox'][2]))
             hs.append(float(obj['bbox'][3]))
             i += 1
-            if i > 10000:
-                break
+            # if i > 10000:
+            #     break
 
     return pd.DataFrame({  # 'images': images,
         'make': pd.Categorical(makes),
@@ -87,7 +87,7 @@ def test_plot_prices():
         models = df[df['make'] == make]['model'].unique().tolist()
         num_rows = len(models)
         num_cols = 1
-        fig, axes = plt.subplots(num_rows, num_cols, sharex=True, sharey=True, figsize=(15, 10))
+        fig, axes = plt.subplots(num_rows, num_cols, sharex=True, figsize=(25, 30))
 
         for idx, model in enumerate(models):
             ax = axes[idx]
