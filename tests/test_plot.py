@@ -1,8 +1,10 @@
 from .context import *
 
+
+
 HERE = os.path.dirname(os.path.realpath(__file__))
-COCO_IMAGES_DIR = os.path.join(HERE, '../../../datasets/coco-small/cocoapi/images/val2014')
-COCO_ANNOTATIONS_FILE = os.path.join(COCO_IMAGES_DIR, '../../annotations/instances_val2014_10_per_category.json')
+COCO_IMAGES_DIR = os.path.join(HERE, '../../../datasets/coco-small/images/val2014')
+COCO_ANNOTATIONS_FILE = os.path.join(HERE, '../../../datasets/coco-small/annotations/instances_val2014_10_per_category.json')
 
 
 def test_plot_boxes():
@@ -30,7 +32,7 @@ def test_plot_boxes():
     coordinates, class_scores, confidence = yolo(images)
     prediction = torch.cat((coordinates, confidence.unsqueeze(-1), class_scores), -1)
     detections = non_max_suppression(prediction=prediction,
-                                     conf_thres=0.9,
+                                     conf_thres=0.5,
                                      nms_thres=0.5)
 
     plot_batch(detections,

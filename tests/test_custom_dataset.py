@@ -1,8 +1,8 @@
 from .context import *
 
 HERE = os.path.dirname(os.path.realpath(__file__))
-COCO_IMAGES_DIR = os.path.join(HERE, '../../../datasets/coco-small/cocoapi/images/train2014')
-COCO_ANNOTATIONS_FILE = os.path.join(COCO_IMAGES_DIR, '../../annotations/instances_train2014_10_per_category.json')
+COCO_IMAGES_DIR = os.path.join(HERE, '../../../datasets/coco-small/images/val2014')
+COCO_ANNOTATIONS_FILE = os.path.join(HERE, '../../../datasets/coco-small/annotations/instances_val2014_10_per_category.json')
 
 
 def test_simple_car_dataset():
@@ -48,20 +48,19 @@ def test_detected_car_dataset():
     ])
 
     batch_size = 2
-    dataset = DetectedCarDataset(json_file=os.path.join(HERE, 'resources/detected-cars/2019-11-29T15-03-38/feed.json'),
+    dataset = DetectedCarDataset(json_file='/home/peter/datasets/detected-cars/more_than_4000_detected_per_make/train.json',
                                  transforms=image_and_target_transform, batch_size=batch_size)
 
-    data_loader = DataLoader(dataset=dataset, shuffle=False, batch_size=batch_size)
+    data_loader = DataLoader(dataset=dataset, shuffle=False, batch_size=batch_size, collate_fn=dataset.collate_fn)
     limit = 10
 
-    for batch_i, (images, annotations, _) in enumerate(data_loader):
+    for batch_i, (images, ground_truth_boxes, _) in enumerate(data_loader):
 
         if len(images) != batch_size:
             print("skipping batch {}. Size {} does not equal expected batch size {}".format(batch_i, len(images),
                                                                                             batch_size))
             continue
 
-        ground_truth_boxes = dataset.get_ground_truth_boxes(annotations)
 
         plot_batch(None, ground_truth_boxes, images, None)
         if batch_i > limit:
@@ -78,17 +77,16 @@ def test_detected_car_make_dataset():
     dataset = DetectedCareMakeDataset(json_file=os.path.join(HERE, 'output/detected-cars-small/feed.json'),
                                       transforms=image_and_target_transform, batch_size=batch_size)
 
-    data_loader = DataLoader(dataset=dataset, shuffle=False, batch_size=batch_size)
+    data_loader = DataLoader(dataset=dataset, shuffle=False, batch_size=batch_size, collate_fn=dataset.collate_fn)
     limit = 10
 
-    for batch_i, (images, annotations, _) in enumerate(data_loader):
+    for batch_i, (images, ground_truth_boxes, _) in enumerate(data_loader):
 
         if len(images) != batch_size:
             print("skipping batch {}. Size {} does not equal expected batch size {}".format(batch_i, len(images),
                                                                                             batch_size))
             continue
 
-        ground_truth_boxes = dataset.get_ground_truth_boxes(annotations)
 
         plot_batch(None, ground_truth_boxes, images, dataset._class_names)
         if batch_i > limit:
@@ -126,7 +124,7 @@ def test_voc_dataset():
                                batch_size=batch_size,
                                transforms=image_and_target_transform,
                                image_set='val',
-                               download=False,
+                               download=True,
                                class_names=class_names)
 
     dataloader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=False, collate_fn=dataset.collate_fn)

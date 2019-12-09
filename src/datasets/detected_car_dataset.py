@@ -170,7 +170,7 @@ class DetectedCarDataset(Dataset):
         return len(self.annotations)
 
     def _get_class_id(self, annotation):
-        raise NotImplementedError()
+        return -1
 
     def _annotation_to_groundtruth_boxes(self, annotation):
         bbox = annotation['bbox']
