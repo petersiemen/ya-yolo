@@ -23,8 +23,6 @@ def test_tensorboard():
     # COCO_ANNOTATIONS_FILE = '/home/ubuntu/datasets/coco/annotations/instances_train2014.json'
 
     image_and_target_transform = Compose([
-        ConvertXandYToCenterOfBoundingBox(),
-        AbsoluteToRelativeBoundingBox(),
         SquashResize(416),
         CocoToTensor()
     ])
