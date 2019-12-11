@@ -1,10 +1,12 @@
 from torch.utils.tensorboard import SummaryWriter
 
+
 from .context import *
 
 HERE = os.path.dirname(os.path.realpath(__file__))
-COCO_IMAGES_DIR = os.path.join(HERE, '../../../datasets/coco-small/cocoapi/images/train2014')
-COCO_ANNOTATIONS_FILE = os.path.join(COCO_IMAGES_DIR, '../../annotations/instances_train2014_10_per_category.json')
+COCO_IMAGES_DIR = os.path.join(HERE, '../../../datasets/coco-small/images/val2014')
+COCO_ANNOTATIONS_FILE = os.path.join(HERE, '../../../datasets/coco-small/annotations/instances_val2014_10_per_category.json')
+
 
 
 def test_get_indices_for_center_of_ground_truth_bounding_boxes__for_no_annotations():

@@ -2,6 +2,7 @@ import argparse
 import os
 import sys
 
+
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
@@ -52,24 +53,29 @@ def train_car_make(car_make_json_file,
                        map_location=DEVICE))
 
     summary_writer = SummaryWriter(comment=f' evaluate={batch_size}')
-    train(model=model,
-          dataset=dataset,
-          model_dir=model_dir,
-          summary_writer=summary_writer,
-          epochs=epochs,
-          lr=lr,
-          conf_thres=conf_thres,
-          nms_thres=0.5,
-          iou_thres=0.5,
-          lambda_coord=5,
-          lambda_no_obj=0.5,
-          gradient_accumulations=gradient_accumulations,
-          clip_gradients=clip_gradients,
-          limit=limit,
-          debug=False,
-          print_every=log_every,
-          save_every=save_every)
-    summary_writer.close()
+
+    with neptune.create_experiment(name='start-with-neptune',
+                                   params=PARAMS):
+        neptune.append_tag('first-example')
+
+        train(model=model,
+              dataset=dataset,
+              model_dir=model_dir,
+              summary_writer=summary_writer,
+              epochs=epochs,
+              lr=lr,
+              conf_thres=conf_thres,
+              nms_thres=0.5,
+              iou_thres=0.5,
+              lambda_coord=5,
+              lambda_no_obj=0.5,
+              gradient_accumulations=gradient_accumulations,
+              clip_gradients=clip_gradients,
+              limit=limit,
+              debug=False,
+              print_every=log_every,
+              save_every=save_every)
+        summary_writer.close()
 
 
 def run():

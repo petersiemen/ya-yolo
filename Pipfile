@@ -29,6 +29,8 @@ terminaltables = "*"
 tensorboardcolab = "*"
 pandas = "*"
 seaborn = "*"
+neptune-client = "*"
+python-dotenv = "*"
 shap = "*"
 
 [requires]

@@ -22,6 +22,7 @@ from yolo.layers import *
 from yolo.yolo_builder import *
 from yolo.helpers import *
 from yolo.plotting import *
+from yolo.cluster import *
 from metrics.utils import *
 
 
