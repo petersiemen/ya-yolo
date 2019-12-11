@@ -5,7 +5,7 @@ import coremltools
 from coremltools.models.pipeline import *
 
 HERE = os.path.dirname(os.path.realpath(__file__))
-# cfg_file = os.path.join(HERE, '../cfg/mini-yolov3.cfg')
+#cfg_file = os.path.join(HERE, '../cfg/mini-yolov3.cfg')
 cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
 weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
 namesfile = os.path.join(HERE, '../cfg/coco.names')
@@ -33,7 +33,8 @@ def test_convert_to_onnx():
     onnx_model = onnx.load(onnx_filename)
     coreml_model = convert(
         onnx_model,
-        target_ios="13",
+        minimum_ios_deployment_target="13",
+        #target_ios="13",
         image_input_names=['image'],
         preprocessing_args={
             "image_scale": 1 / 255.0,
