@@ -17,12 +17,13 @@ netron = "*"
 nltk = "*"
 cython = "*"
 tensorboard = "*"
-pycocotools = "*"
+#pycocotools = "*"
 #mAP = {git = 'https://github.com/petersiemen/mAP.git',ref = 'master',editable = true}
-onnx-coreml = {git = 'https://github.com/onnx/onnx-coreml.git',ref = 'master',editable = true}
+#onnx-coreml = {git = 'https://github.com/onnx/onnx-coreml.git',ref = 'master',editable = true}
+onnx-coreml = "==1.0"
 ##onnxmltools = "*"
 ##onnxmltools = {git = 'https://github.com/onnx/onnx-coreml.git',ref = 'master',editable = true}
-coremltools = "*"
+coremltools = "==3.0"
 #coremltools = {git= 'https://github.com/apple/coremltools.git', ref = 'master', editable = true}
 terminaltables = "*"
 tensorboardcolab = "*"
