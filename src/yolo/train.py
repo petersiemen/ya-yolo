@@ -17,6 +17,15 @@ from tqdm import tqdm
 import random
 from yolo.layers import ConvolutionalLayer
 from torch.nn.utils import clip_grad_norm_
+import neptune
+from dotenv import load_dotenv
+from pathlib import Path  # python3 only
+env_path = Path('/home/peter/workspace/setup-box/neptune/') / '.env'
+load_dotenv(dotenv_path=env_path)
+
+
+neptune.init('petersiemen/sandbox',
+             api_token=os.getenv("NEPTUNE_API_TOKEN"))
 
 random.seed(0)
 
@@ -171,88 +180,99 @@ def train(model,
                              collate_fn=dataset.collate_fn)
     class_names = model.class_names
 
-    for epoch in range(1, epochs + 1):
-        for batch_i, (images, ground_truth_boxes, image_paths) in tqdm(enumerate(data_loader), total=total):
-            if len(images) != dataset.batch_size:
-                logger.warning(f"Skipping batch {batch_i} because it does not have correct size ({dataset.batch_size})")
-                continue
+    with neptune.create_experiment(name='start-with-neptune',
+                                   params={}):
 
-            images = images.to(DEVICE)
+        neptune.append_tag('first-example')
 
-            coordinates, class_scores, confidence = model(images)
+        for epoch in range(1, epochs + 1):
+            for batch_i, (images, ground_truth_boxes, image_paths) in tqdm(enumerate(data_loader), total=total):
+                if len(images) != dataset.batch_size:
+                    logger.warning(
+                        f"Skipping batch {batch_i} because it does not have correct size ({dataset.batch_size})")
+                    continue
 
-            obj_mask, noobj_mask, cls_mask, target_coordinates, target_confidence, target_class_scores = build_targets(
-                coordinates, class_scores, ground_truth_boxes, grid_sizes)
-            yolo_loss = YoloLoss(coordinates,
-                                 confidence,
-                                 class_scores,
-                                 obj_mask,
-                                 noobj_mask,
-                                 cls_mask,
-                                 target_coordinates,
-                                 target_confidence,
-                                 target_class_scores,
-                                 lambda_coord=lambda_coord,
-                                 lambda_no_obj=lambda_no_obj
-                                 )
+                images = images.to(DEVICE)
 
-            class_scores = torch.sigmoid(class_scores)
-            prediction = torch.cat((coordinates, confidence.unsqueeze(-1), class_scores), -1)
+                coordinates, class_scores, confidence = model(images)
 
-            detections = non_max_suppression(prediction=prediction,
-                                             conf_thres=conf_thres,
-                                             nms_thres=nms_thres
-                                             )
+                obj_mask, noobj_mask, cls_mask, target_coordinates, target_confidence, target_class_scores = build_targets(
+                    coordinates, class_scores, ground_truth_boxes, grid_sizes)
+                yolo_loss = YoloLoss(coordinates,
+                                     confidence,
+                                     class_scores,
+                                     obj_mask,
+                                     noobj_mask,
+                                     cls_mask,
+                                     target_coordinates,
+                                     target_confidence,
+                                     target_class_scores,
+                                     lambda_coord=lambda_coord,
+                                     lambda_no_obj=lambda_no_obj
+                                     )
 
-            ground_truth_map_objects = list(GroundTruth.from_ground_truths(image_paths, ground_truth_boxes))
-            detection_map_objects = list(Detection.from_detections(image_paths, detections))
+                class_scores = torch.sigmoid(class_scores)
+                prediction = torch.cat((coordinates, confidence.unsqueeze(-1), class_scores), -1)
 
-            metrics.add_detections_for_batch(detection_map_objects, ground_truth_map_objects, iou_thres=iou_thres)
+                detections = non_max_suppression(prediction=prediction,
+                                                 conf_thres=conf_thres,
+                                                 nms_thres=nms_thres
+                                                 )
 
-            if debug:
-                plot_batch(detections, ground_truth_boxes, images, class_names)
+                ground_truth_map_objects = list(GroundTruth.from_ground_truths(image_paths, ground_truth_boxes))
+                detection_map_objects = list(Detection.from_detections(image_paths, detections))
 
-            loss = yolo_loss.get()
-            # backward pass to calculate the weight gradients
-            loss.backward()
+                metrics.add_detections_for_batch(detection_map_objects, ground_truth_map_objects, iou_thres=iou_thres)
 
-            if clip_gradients:
-                logger.info("Clipping gradients with max_norm = 1")
-                clip_grad_norm_(model.parameters(), max_norm=1)
+                if debug:
+                    plot_batch(detections, ground_truth_boxes, images, class_names)
 
-            if batch_i % print_every == 0:  # print every print_every +1  batches
-                yolo_loss.capture(summary_writer, batch_i, during='train')
-                plot_weights_and_gradients(model, summary_writer, epoch * batch_i)
-                log_performance(epoch, epochs, batch_i, total, yolo_loss, metrics, class_names, summary_writer)
+                loss = yolo_loss.get()
+                # backward pass to calculate the weight gradients
+                loss.backward()
 
-            # Accumulates gradient before each step
-            if batch_i % gradient_accumulations == 0:
-                logger.info(f"Updating weights for batch {batch_i} (gradient_accumulations :{gradient_accumulations})")
-                # update the weights
-                optimizer.step()
-                # zero the parameter (weight) gradients
-                optimizer.zero_grad()
+                if clip_gradients:
+                    logger.info("Clipping gradients with max_norm = 1")
+                    clip_grad_norm_(model.parameters(), max_norm=1)
 
-            del images
-            del ground_truth_boxes
+                if batch_i % print_every == 0:  # print every print_every +1  batches
+                    yolo_loss.capture(summary_writer, batch_i, during='train')
+                    plot_weights_and_gradients(model, summary_writer, epoch * batch_i)
+                    log_performance(epoch, epochs, batch_i, total, yolo_loss, metrics, class_names, summary_writer)
 
-            if limit is not None and batch_i + 1 >= limit:
-                logger.info('Stop here after training {} batches (limit: {})'.format(batch_i, limit))
-                log_performance(epoch, epochs, batch_i, total, yolo_loss, metrics, class_names, summary_writer)
-                save_model(model_dir, model, epoch, batch_i)
-                return
+                # Accumulates gradient before each step
+                if batch_i % gradient_accumulations == 0:
+                    logger.info(
+                        f"Updating weights for batch {batch_i} (gradient_accumulations :{gradient_accumulations})")
+                    # update the weights
+                    optimizer.step()
+                    # zero the parameter (weight) gradients
+                    optimizer.zero_grad()
 
-            if save_every is not None and batch_i % save_every == 0:
-                save_model(model_dir, model, epoch, batch_i)
+                del images
+                del ground_truth_boxes
 
-        # save model after every epoch
-        save_model(model_dir, model, epoch, None)
+                if limit is not None and batch_i + 1 >= limit:
+                    logger.info('Stop here after training {} batches (limit: {})'.format(batch_i, limit))
+                    log_performance(epoch, epochs, batch_i, total, yolo_loss, metrics, class_names, summary_writer)
+                    save_model(model_dir, model, epoch, batch_i)
+                    return
+
+                if save_every is not None and batch_i % save_every == 0:
+                    save_model(model_dir, model, epoch, batch_i)
+
+            # save model after every epoch
+            save_model(model_dir, model, epoch, None)
 
 
 def log_performance(epoch, epochs, batch_i, total, yolo_loss, metrics, class_names, summary_writer):
     log_str = "\n---- [Epoch %d/%d, Batch %d/%d] ----\n" % (epoch, epochs, batch_i, total)
     log_str += yolo_loss.print()
     logger.info(log_str)
+
+    neptune.log_metric('iteration', batch_i)
+    neptune.log_metric('loss', yolo_loss.total_loss)
+
     log_average_precision_for_classes(metrics, class_names, summary_writer, epoch * batch_i)
 
 
