@@ -17,7 +17,7 @@ netron = "*"
 nltk = "*"
 cython = "*"
 tensorboard = "*"
-#pycocotools = "*"
+pycocotools = "*"
 #mAP = {git = 'https://github.com/petersiemen/mAP.git',ref = 'master',editable = true}
 #onnx-coreml = {git = 'https://github.com/onnx/onnx-coreml.git',ref = 'master',editable = true}
 onnx-coreml = "==1.0"
@@ -32,6 +32,7 @@ seaborn = "*"
 neptune-client = "*"
 python-dotenv = "*"
 shap = "*"
+sklearn = "*"
 
 [requires]
 python_version = "3.6"

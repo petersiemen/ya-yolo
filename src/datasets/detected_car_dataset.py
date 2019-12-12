@@ -7,7 +7,9 @@ from yolo.utils import non_max_suppression
 import os
 from logging_config import *
 import json
+import pandas as pd
 from device import DEVICE
+import numpy as np
 
 logger = logging.getLogger(__name__)
 HERE = os.path.dirname(os.path.realpath(__file__))
@@ -28,8 +30,7 @@ class DetectedCarDatasetHelper():
                            confidence,
                            images,
                            annotations,
-                           image_paths
-                           ):
+                           image_paths):
 
         prediction = torch.cat((coordinates, confidence.unsqueeze(-1), class_scores), -1)
         detections = non_max_suppression(prediction=prediction,
@@ -114,6 +115,9 @@ class DetectedCarDatasetWriter():
                         })
         )
 
+    def append_detected_car(self, detected_car):
+        self.file_writer.append(detected_car.to_json())
+
     def __repr__(self):
         return 'DetectedSimpleCarDatasetWriter({}, {})'.format(self.images_dir, self.file_writer.fd.name)
 
@@ -182,6 +186,53 @@ class DetectedCarDataset(Dataset):
         target = [self._annotation_to_groundtruth_boxes(item[1]) for item in batch]
         image_paths = [item[2] for item in batch]
         return images, target, image_paths
+
+    @staticmethod
+    def get_data_frame(feed_json, limit=None):
+        images = []
+        makes = []
+        models = []
+        prices = []
+        date_of_first_registrations = []
+        xs = []
+        ys = []
+        ws = []
+        hs = []
+        i = 0
+        with open(feed_json) as f:
+            for line in f:
+                obj = json.loads(line)
+                image = obj['image']
+                images.append(image)
+                makes.append(obj['make'])
+                models.append(obj['model'])
+                price = float(obj['price'])
+                dofr = int(obj['date_of_first_registration'])
+                if np.isnan(price) or np.isnan(dofr):
+                    logger.error(f'Price or Dofr is NaN. Skipping {image}')
+                    continue
+
+                prices.append(price)
+                date_of_first_registrations.append(dofr)
+                xs.append(float(obj['bbox'][0]))
+                ys.append(float(obj['bbox'][1]))
+                ws.append(float(obj['bbox'][2]))
+                hs.append(float(obj['bbox'][3]))
+                i += 1
+                if limit is not None and i >= limit:
+                    break
+
+        return pd.DataFrame({
+            'images': images,
+            'make': pd.Categorical(makes),
+            'model': pd.Categorical(models),
+            'price': prices,
+            'dofr': date_of_first_registrations,
+            'x': xs,
+            'y': ys,
+            'w': ws,
+            'h': hs,
+        })
 
 
 class DetectedCareMakeDataset(DetectedCarDataset):
