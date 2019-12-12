@@ -18,8 +18,6 @@ class Yolo(nn.Module):
         self.coreml_mode = coreml_mode
 
         self.class_names = load_class_names(namesfile=namesfile)
-        # TODO move this somewhere else when you write the code to customize the model to
-        # an arbitrary number of classes
         tmp = set([
             model.num_classes for model in self.models if isinstance(model, EagerYoloLayer)])
         assert len(tmp) == 1

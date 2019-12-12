@@ -26,7 +26,7 @@ def onnx_to_coreml(onnx_filename, core_ml_filename):
     onnx_model = onnx.load(onnx_filename)
     coreml_model = convert(
         onnx_model,
-        target_ios="13",
+        minimum_ios_deployment_target="13",
         image_input_names=['image'],
         preprocessing_args={
             "image_scale": 1 / 255.0,

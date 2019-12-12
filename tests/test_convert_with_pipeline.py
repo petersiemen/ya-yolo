@@ -34,7 +34,6 @@ def test_convert_to_onnx():
     coreml_model = convert(
         onnx_model,
         minimum_ios_deployment_target="13",
-        #target_ios="13",
         image_input_names=['image'],
         preprocessing_args={
             "image_scale": 1 / 255.0,

@@ -25,5 +25,6 @@ from yolo.helpers import *
 from yolo.plotting import *
 from datasets.cluster import *
 from metrics.utils import *
+from yolo.convert import *
 
 

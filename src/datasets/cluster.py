@@ -17,7 +17,7 @@ def cluster(detected_cars, n_clusters):
                   for detected_car in detected_cars])
 
     X = MinMaxScaler().fit_transform(X)
-    X[:, 1] = X[:, 1] * 2 # the date_of_first_registration should overrule the price
+    X[:, 1] = X[:, 1] * 3 # the date_of_first_registration should overrule the price
 
     kmeans = KMeans(n_clusters=n_clusters).fit(X)
     return kmeans.labels_

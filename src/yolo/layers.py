@@ -273,7 +273,7 @@ class EagerYoloLayer(nn.Module):
                   self.num_classes)
         if self.coreml_mode:
             return coordinates, \
-                   class_scores * det_confs.view(self.batch_size,
+                   torch.sigmoid(class_scores) * det_confs.view(self.batch_size,
                                                  self.num_anchors * self.height * self.width).unsqueeze(
                        -1), \
                    det_confs.view(self.batch_size,

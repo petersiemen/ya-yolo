@@ -199,7 +199,7 @@ class DetectedCarDataset(Dataset):
         ws = []
         hs = []
         i = 0
-        with open(feed_json) as f:
+        with open(feed_json, encoding="utf-8") as f:
             for line in f:
                 obj = json.loads(line)
                 image = obj['image']

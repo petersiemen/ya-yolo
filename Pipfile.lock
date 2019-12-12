@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "79e287385130683fd4df8d14f0aba8bf04e1dc0d57402bd210d2886d53d9d6f9"
+            "sha256": "20d569197f872ca52e575c4af3c2d5994129f73c47e6e343831a0cc3a4696abe"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -21,6 +21,14 @@
                 "sha256:d9129186431e150d7fe455f1cb1ecbb92bb5dba9da9bc3ef7b012d98c4db2526"
             ],
             "version": "==0.8.1"
+        },
+        "appnope": {
+            "hashes": [
+                "sha256:5b26757dc6f79a3b7dc9fab95359328d5747fcb2409d331ea66d0272b90ab2a0",
+                "sha256:8b995ffe925347a2138d7ac0fe77155e4311a0ea6d6da4f5128fe4b3cbe5ed71"
+            ],
+            "markers": "platform_system == 'Darwin'",
+            "version": "==0.1.0"
         },
         "attrs": {
             "hashes": [
@@ -789,13 +797,6 @@
                 "sha256:b6ada4f840fe51abf5a6bd545b45bf537bea62221fa0dde2e8a553ed9f06a4e3"
             ],
             "version": "==0.2.7"
-        },
-        "pycocotools": {
-            "hashes": [
-                "sha256:cbb8c2fbab80450a67ee9879c63b0bc8a69e58dd9a0153d55de404c0d383a94b"
-            ],
-            "index": "pypi",
-            "version": "==2.0.0"
         },
         "pygments": {
             "hashes": [

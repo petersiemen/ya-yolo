@@ -1,9 +1,12 @@
 from .context import *
+from dotenv import load_dotenv
+
+
 
 
 def test_kmeans_with_one_model():
     df = DetectedCarDataset.get_data_frame(
-        '/home/peter/datasets/detected-cars/more_than_4000_detected_per_make/feed.json')
+        os.path.join(os.environ['HOME'], 'datasets/detected-cars/more_than_4000_detected_per_make/feed.json'))
 
     supra = df[(df['make'] == 'Toyota') & (df['model'] == 'Supra')]
 
@@ -26,7 +29,8 @@ def test_kmeans_with_one_model():
 
 def test_kmeans_with_more_makes_and_models():
     df = DetectedCarDataset.get_data_frame(
-        '/home/peter/datasets/detected-cars/more_than_4000_detected_per_make/feed.json')
+        os.path.join(os.environ['HOME'],
+                     'datasets/detected-cars/more_than_4000_detected_per_make/feed.json'))
 
     makes = df['make'].unique().tolist()
     max_makes = 5
@@ -44,8 +48,8 @@ def test_kmeans_with_more_makes_and_models():
 
             print(f"cluster {make} -  {model}")
             if len(detected_cars) > 2:
-                #labels = cluster(detected_cars, 2)
-                labels = find_best_cluster(detected_cars,1,3)
+                # labels = cluster(detected_cars, 2)
+                labels = find_best_cluster(detected_cars, 1, 3)
 
                 plt.scatter([detected_car.date_of_first_registration for detected_car in detected_cars],
                             [detected_car.price for detected_car in detected_cars],
@@ -77,4 +81,3 @@ def test_find_best_cluster():
                 c=labels,
                 s=50, cmap='viridis')
     plt.show()
-
