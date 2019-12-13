@@ -142,26 +142,34 @@ def test_convert_to_onnx():
 
 
 def test_predict_with_pipeline():
+    with open(
+            os.path.join(os.environ['HOME'],
+                         'datasets/detected-cars/more_than_4000_detected_per_make/makes.csv'), encoding="utf-8") as f:
+        class_names = [make.strip() for make in f.readlines()]
+
     transform_resize = Compose([
         SquashResize(416),
+    ])
+    to_tensor = Compose([
+        CocoToTensor()
     ])
 
     model = coremltools.models.MLModel(coreml_pipeline_filename)
 
     image = load_image_file(os.path.join(HERE, './images/car.jpg'))
     resized, _ = transform_resize(image, {})
-    # images = images.unsqueeze(0)
     output = model.predict({'image': resized}, usesCPUOnly=True)
-    print(output)
 
     coordinates = output["coordinates"]
-    class_scores = output["confidence"]
-    # confidence = output["confidence"]
+    confidence = output["confidence"]
+    detections = coreml_output_to_detections(coordinates, confidence)
+    tensor_image, _ = to_tensor(image, {})
+    plot_batch([detections], None, tensor_image.unsqueeze(0), class_names)
 
-    print()
 
 
-def test_covert_pytorch_to_coreml():
+
+def test_convert_pytorch_to_coreml():
     with open(
             os.path.join(os.environ['HOME'],
                          'datasets/detected-cars/more_than_4000_detected_per_make/makes.csv'), encoding="utf-8") as f:
@@ -175,3 +183,41 @@ def test_covert_pytorch_to_coreml():
                                                            'datasets/models/car_makes/yolo__num_classes_80__epoch_2_batch_7500.pt'),
                               dummy_input=dummy_input,
                               coreml_pipeline_filename=os.path.join(HERE, 'output/YoloPipelineCarMakes.mlmodel'))
+
+
+def test_predict_cars_with_pipeline():
+    image_and_target_transform = Compose([
+        SquashResize(416),
+        CocoToTensor()
+    ])
+    to_pil_image = transforms.Compose([
+        ToPILImage()
+    ])
+
+    batch_size = 1
+    model = coremltools.models.MLModel(os.path.join(HERE, 'output/YoloPipelineCarMakes.mlmodel'))
+
+    dataset = DetectedCareMakeDataset(
+        json_file=os.path.join(os.environ['HOME'],
+                               'datasets/detected-cars/more_than_4000_detected_per_make/test.json'),
+        transforms=image_and_target_transform, batch_size=batch_size)
+    data_loader = DataLoader(dataset=dataset, shuffle=False, batch_size=batch_size, collate_fn=dataset.collate_fn)
+    limit = 10
+
+    for batch_i, (images, ground_truth_boxes, _) in enumerate(data_loader):
+
+        pil_image = to_pil_image(images.squeeze(0))
+        output = model.predict({'image': pil_image, 'confidenceThreshold': 0.4}, usesCPUOnly=True)
+        print(output)
+
+        coordinates = output["coordinates"]
+        confidence = output["confidence"]
+        detections = coreml_output_to_detections(coordinates, confidence)
+
+        plot_batch([detections], None, images, dataset.class_names)
+        if batch_i > limit:
+            break
+
+    print()
+
+

@@ -14,8 +14,26 @@ from logging_config import *
 from yolo.utils import load_class_names
 from yolo.yolo import Yolo
 from device import DEVICE
+import numpy as np
 
 logger = logging.getLogger(__name__)
+
+
+def coreml_output_to_detections(coordinates, confidence):
+    num_objects = len(coordinates)
+    detections = []
+    for i in range(num_objects):
+        box = coordinates[i].tolist()
+        conf = confidence[i]
+        class_idx = np.argmax(conf)
+        class_conf = conf[class_idx]
+
+        box.append(class_conf)
+        box.append(class_conf)
+        box.append(class_idx)
+
+        detections.append(torch.tensor(box))
+    return detections
 
 
 def pytorch_to_onnx(model, dummy_input, onnx_filename):
@@ -26,7 +44,7 @@ def pytorch_to_onnx(model, dummy_input, onnx_filename):
                       input_names=["image"],
                       output_names=["boxes", "scores"])
     onnx_model = onnx.load(onnx_filename)
-    #onnx.checker.check_model(onnx_model)
+    onnx.checker.check_model(onnx_model)
 
 
 def onnx_to_coreml(onnx_filename, core_ml_filename):
@@ -58,7 +76,9 @@ def convert_pytorch_to_coreml(cfg_file, class_names, state_dict_file, dummy_inpu
     HERE = os.path.dirname(os.path.realpath(__file__))
 
     _onnx_filename = os.path.join(HERE, '../../tests/output/yolo-cars.onnx') #tempfile.NamedTemporaryFile(prefix='onny-yolo')
+    #_onnx_filename =  tempfile.NamedTemporaryFile(prefix='onny-yolo', suffix='.onnx', delete=False)
     _coreml_filename = os.path.join(HERE, '../../tests/output/yolo-cars.mlmodel') #tempfile.NamedTemporaryFile(prefix='coreml-yolo')
+    #_coreml_filename = tempfile.NamedTemporaryFile(prefix='coreml-yolo', suffix='.mlmodel', delete=False)
     _coreml_nms_filename =os.path.join(HERE, '../../tests/output/yolo-cars-nms.mlmodel')# tempfile.NamedTemporaryFile(prefix='coreml-nms')
 
     yolo = Yolo(cfg_file=cfg_file, class_names=class_names, batch_size=1, coreml_mode=True)

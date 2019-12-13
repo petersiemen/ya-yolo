@@ -111,3 +111,5 @@ cfg/yolov3.weights
 runs
 /tests/map-inputs/
 results
+
+.DS_Store
