@@ -35,8 +35,9 @@ def test_detect_and_process_for_detected_car_dataset():
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
     namesfile = os.path.join(HERE, '../cfg/coco.names')
+    class_names = load_class_names(namesfile)
     with torch.no_grad():
-        model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size)
+        model = Yolo(cfg_file=cfg_file, class_names=class_names, batch_size=batch_size)
         model.load_weights(weight_file)
 
         with FileWriter(file_path=feed_file) as file_writer:
