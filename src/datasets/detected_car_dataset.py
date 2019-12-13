@@ -45,13 +45,13 @@ class DetectedCarDatasetHelper():
             detected_car = torch.zeros(len(boxes), dtype=torch.bool, device=DEVICE)
             for box_idx in range(len(boxes)):
                 box = boxes[box_idx]
-                # if class == 2 (car) and box-width >= 0.5 and box-height >= 0.4 and class_conf >= 0.8
-                if box[6] == 2 and box[2] >= 0.5 and box[3] >= 0.3 and box[5] >= 0.8:
+                if box[6] == 2 and box[2] >= 0.5 and box[3] >= 0.3 and box[5] >= 0.9:
                     detected_car[box_idx] = True
 
             num_detected_cars = torch.sum(detected_car)
             if num_detected_cars == 1:
-                bb = boxes[0]
+                index_of_identified_car = (detected_car == True).nonzero().item()
+                bb = boxes[index_of_identified_car]
                 bounding_box = {
                     'x': bb[0].item(), 'y': bb[1].item(), 'w': bb[2].item(), 'h': bb[3].item()
                 }
@@ -75,10 +75,13 @@ class DetectedCarDatasetHelper():
             car_detections = []
             for i in range(len(detections)):
                 detected_car = detected_one_car_for_batch[i]
-                if len(detected_car) > 0:
-                    car_detections.append(detections[i][detected_car])
+                num_detected_cars = torch.sum(detected_car)
+                if num_detected_cars > 0:
+                    index_of_identified_car = (detected_car == True).nonzero().item()
+                    car_detections.append([detections[i][index_of_identified_car]])
                 else:
-                    car_detections.append(detections[i])
+                    #car_detections.append(detections[i])
+                    car_detections.append([])
 
             plot_batch(car_detections,
                        None,

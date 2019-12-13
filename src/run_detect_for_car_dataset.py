@@ -13,6 +13,7 @@ from file_writer import FileWriter
 from logging_config import *
 from yolo.detect import detect_and_process
 from yolo.yolo import Yolo
+from yolo.utils import load_class_names
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +35,9 @@ def run_detect_cars(in_dir, out_dir, batch_size, limit, conf_thres, nms_thres, d
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
     namesfile = os.path.join(HERE, '../cfg/coco.names')
+    class_names = load_class_names(namesfile)
     with torch.no_grad():
-        model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size)
+        model = Yolo(cfg_file=cfg_file, class_names=class_names, batch_size=batch_size)
         model.load_weights(weight_file)
         model.to(DEVICE)
         model.eval()
@@ -60,7 +62,7 @@ def run_detect_cars(in_dir, out_dir, batch_size, limit, conf_thres, nms_thres, d
                                                                batch_size=batch_size,
                                                                debug=debug)
             cnt = detect_and_process(model=model,
-                                     ya_yolo_dataset=dataset,
+                                     dataset=dataset,
                                      processor=detected_dataset_helper.process_detections,
                                      limit=limit)
 

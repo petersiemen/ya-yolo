@@ -15,7 +15,7 @@ def test_detect_and_process_for_detected_car_dataset():
     ])
     batch_size = 3
 
-    dataset = SimpleCarDataset(root_dir='/home/peter/datasets/simple_cars/2019-08-23T10-22-54',
+    dataset = SimpleCarDataset(root_dir=os.path.join(os.environ['HOME'],'datasets/simple-cars-small'),
                                transforms=image_and_target_transform, batch_size=batch_size)
 
     detected_cars = os.path.join(HERE, 'output/detected-cars')
