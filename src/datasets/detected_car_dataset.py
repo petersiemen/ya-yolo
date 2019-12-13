@@ -136,7 +136,7 @@ class DetectedCarDataset(Dataset):
         self.image_paths = []
         self.annotations = []
         basedir = os.path.dirname(json_file)
-        with open(json_file) as f:
+        with open(json_file, encoding="utf-8") as f:
             for line in f:
                 obj = json.loads(line)
                 if allow_unknown_make == False and obj['make'] == 'UNKNOWN':
@@ -241,7 +241,7 @@ class DetectedCareMakeDataset(DetectedCarDataset):
         car_makes_file = os.path.join(os.path.dirname(json_file), "makes.csv")
         assert os.path.exists(car_makes_file), f"{car_makes_file} does not exist"
 
-        with open(car_makes_file) as f:
+        with open(car_makes_file, encoding="utf-8") as f:
             self.class_names = [make.strip() for make in f.readlines()]
 
     def _get_class_id(self, annotation):

@@ -10,7 +10,9 @@ def test_predict_car_make():
     ])
     batch_size = 1
 
-    with open('/home/peter/datasets/detected-cars/more_than_4000_detected_per_make/makes.csv') as f:
+    with open(
+            os.path.join(os.environ['HOME'],
+                         'datasets/detected-cars/more_than_4000_detected_per_make/makes.csv'), encoding="utf-8") as f:
         class_names = [make.strip() for make in f.readlines()]
 
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
@@ -25,7 +27,8 @@ def test_predict_car_make():
         torch.load(os.path.join(HERE, '../models/yolo__num_classes_80__epoch_2_batch_7500.pt'), map_location=DEVICE))
 
     dataset = DetectedCareMakeDataset(
-        json_file='/home/peter/datasets/detected-cars/more_than_4000_detected_per_make/test.json',
+        json_file=os.path.join(os.environ['HOME'],
+                               'datasets/detected-cars/more_than_4000_detected_per_make/test.json'),
         transforms=image_and_target_transform, batch_size=batch_size)
     data_loader = DataLoader(dataset=dataset, shuffle=False, batch_size=batch_size, collate_fn=dataset.collate_fn)
     limit = 10
@@ -34,7 +37,6 @@ def test_predict_car_make():
         plot_batch(None, ground_truth_boxes, images, dataset.class_names)
         if batch_i > limit:
             break
-
 
     # image = load_image_file(os.path.join(HERE, './images/car.jpg'))
     # images, _ = image_and_target_transform(image, {})
