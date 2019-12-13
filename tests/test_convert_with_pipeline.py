@@ -26,7 +26,8 @@ coreml_pipeline_filename_in_yolo_ios = os.path.join(HERE, '../../yolo-ios/YoloIO
 def test_convert_to_onnx():
     # yolo model
     dummy_input = torch.randn(1, 3, 416, 416, requires_grad=True)
-    yolo = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=1, coreml_mode=True)
+    class_names = load_class_names(namesfile)
+    yolo = Yolo(cfg_file=cfg_file, class_names=class_names, batch_size=1, coreml_mode=True)
     yolo.load_weights(weight_file)
     pytorch_to_onnx(yolo, dummy_input, onnx_filename)
 
@@ -165,8 +166,12 @@ def test_covert_pytorch_to_coreml():
             os.path.join(os.environ['HOME'],
                          'datasets/detected-cars/more_than_4000_detected_per_make/makes.csv'), encoding="utf-8") as f:
         class_names = [make.strip() for make in f.readlines()]
+
+    dummy_input = torch.randn(1, 3, 416, 416, requires_grad=True)
+
     convert_pytorch_to_coreml(cfg_file=os.path.join(HERE, '../cfg/yolov3.cfg'),
                               class_names=class_names,
                               state_dict_file=os.path.join(os.environ['HOME'],
                                                            'datasets/models/car_makes/yolo__num_classes_80__epoch_2_batch_7500.pt'),
+                              dummy_input=dummy_input,
                               coreml_pipeline_filename=os.path.join(HERE, 'output/YoloPipelineCarMakes.mlmodel'))
