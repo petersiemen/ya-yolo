@@ -5,7 +5,7 @@ from .context import *
 HERE = os.path.dirname(os.path.realpath(__file__))
 # replace with path to your coco-dataset
 COCO_IMAGES_DIR = os.path.join(HERE, '../../../datasets/coco-small/cocoapi/images/train2014')
-COCO_ANNOTATIONS_FILE = os.path.join(COCO_IMAGES_DIR, '../../annotations/instances_train2014_10_per_category.json')
+COCO_ANNOTATIONS_FILE = os.path.join(HERE, '../../../datasets/coco-small/annotations/instances_train2014_10_per_category.json')
 COCO_NAMES_FILE = os.path.join(HERE, '../cfg/coco.names')
 
 

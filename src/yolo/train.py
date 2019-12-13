@@ -20,11 +20,6 @@ from torch.nn.utils import clip_grad_norm_
 import neptune
 from dotenv import load_dotenv
 from pathlib import Path  # python3 only
-# env_path = Path(os.environ['HOME'],'workspace/setup-box/neptune.env')
-# load_dotenv(dotenv_path=env_path)
-#
-# neptune.init('petersiemen/sandbox',
-#              api_token=os.getenv("NEPTUNE_API_TOKEN"))
 
 random.seed(0)
 
@@ -158,7 +153,15 @@ def train(model,
           limit=None,
           debug=False,
           print_every=10,
-          save_every=None):
+          save_every=None,
+          log_to_neptune=False):
+    if log_to_neptune:
+        env_path = Path(os.environ['HOME'], 'workspace/setup-box/neptune.env')
+        load_dotenv(dotenv_path=env_path)
+
+        neptune.init('petersiemen/sandbox',
+                     api_token=os.getenv("NEPTUNE_API_TOKEN"))
+
     total = limit if limit is not None else len(dataset)
 
     logger.info(
@@ -179,100 +182,95 @@ def train(model,
                              collate_fn=dataset.collate_fn)
     class_names = model.class_names
 
-    with neptune.create_experiment(name='start-with-neptune',
-                                   params={}):
+    for epoch in range(1, epochs + 1):
+        for batch_i, (images, ground_truth_boxes, image_paths) in tqdm(enumerate(data_loader), total=total):
+            if len(images) != dataset.batch_size:
+                logger.warning(
+                    f"Skipping batch {batch_i} because it does not have correct size ({dataset.batch_size})")
+                continue
 
-        neptune.append_tag('first-example')
+            images = images.to(DEVICE)
 
-        for epoch in range(1, epochs + 1):
-            for batch_i, (images, ground_truth_boxes, image_paths) in tqdm(enumerate(data_loader), total=total):
-                if len(images) != dataset.batch_size:
-                    logger.warning(
-                        f"Skipping batch {batch_i} because it does not have correct size ({dataset.batch_size})")
-                    continue
+            coordinates, class_scores, confidence = model(images)
 
-                images = images.to(DEVICE)
+            obj_mask, noobj_mask, cls_mask, target_coordinates, target_confidence, target_class_scores = build_targets(
+                coordinates, class_scores, ground_truth_boxes, grid_sizes)
+            yolo_loss = YoloLoss(coordinates,
+                                 confidence,
+                                 class_scores,
+                                 obj_mask,
+                                 noobj_mask,
+                                 cls_mask,
+                                 target_coordinates,
+                                 target_confidence,
+                                 target_class_scores,
+                                 lambda_coord=lambda_coord,
+                                 lambda_no_obj=lambda_no_obj
+                                 )
 
-                coordinates, class_scores, confidence = model(images)
+            class_scores = torch.sigmoid(class_scores)
+            prediction = torch.cat((coordinates, confidence.unsqueeze(-1), class_scores), -1)
 
-                obj_mask, noobj_mask, cls_mask, target_coordinates, target_confidence, target_class_scores = build_targets(
-                    coordinates, class_scores, ground_truth_boxes, grid_sizes)
-                yolo_loss = YoloLoss(coordinates,
-                                     confidence,
-                                     class_scores,
-                                     obj_mask,
-                                     noobj_mask,
-                                     cls_mask,
-                                     target_coordinates,
-                                     target_confidence,
-                                     target_class_scores,
-                                     lambda_coord=lambda_coord,
-                                     lambda_no_obj=lambda_no_obj
-                                     )
+            detections = non_max_suppression(prediction=prediction,
+                                             conf_thres=conf_thres,
+                                             nms_thres=nms_thres
+                                             )
 
-                class_scores = torch.sigmoid(class_scores)
-                prediction = torch.cat((coordinates, confidence.unsqueeze(-1), class_scores), -1)
+            ground_truth_map_objects = list(GroundTruth.from_ground_truths(image_paths, ground_truth_boxes))
+            detection_map_objects = list(Detection.from_detections(image_paths, detections))
 
-                detections = non_max_suppression(prediction=prediction,
-                                                 conf_thres=conf_thres,
-                                                 nms_thres=nms_thres
-                                                 )
+            metrics.add_detections_for_batch(detection_map_objects, ground_truth_map_objects, iou_thres=iou_thres)
 
-                ground_truth_map_objects = list(GroundTruth.from_ground_truths(image_paths, ground_truth_boxes))
-                detection_map_objects = list(Detection.from_detections(image_paths, detections))
+            if debug:
+                plot_batch(detections, ground_truth_boxes, images, class_names)
 
-                metrics.add_detections_for_batch(detection_map_objects, ground_truth_map_objects, iou_thres=iou_thres)
+            loss = yolo_loss.get()
+            # backward pass to calculate the weight gradients
+            loss.backward()
 
-                if debug:
-                    plot_batch(detections, ground_truth_boxes, images, class_names)
+            if clip_gradients:
+                logger.info("Clipping gradients with max_norm = 1")
+                clip_grad_norm_(model.parameters(), max_norm=1)
 
-                loss = yolo_loss.get()
-                # backward pass to calculate the weight gradients
-                loss.backward()
+            if batch_i % print_every == 0:  # print every print_every +1  batches
+                yolo_loss.capture(summary_writer, batch_i, during='train')
+                plot_weights_and_gradients(model, summary_writer, epoch * batch_i)
+                log_performance(epoch, epochs, batch_i, total, yolo_loss, metrics, class_names, summary_writer,log_to_neptune)
 
-                if clip_gradients:
-                    logger.info("Clipping gradients with max_norm = 1")
-                    clip_grad_norm_(model.parameters(), max_norm=1)
+            # Accumulates gradient before each step
+            if batch_i % gradient_accumulations == 0:
+                logger.info(
+                    f"Updating weights for batch {batch_i} (gradient_accumulations :{gradient_accumulations})")
+                # update the weights
+                optimizer.step()
+                # zero the parameter (weight) gradients
+                optimizer.zero_grad()
 
-                if batch_i % print_every == 0:  # print every print_every +1  batches
-                    yolo_loss.capture(summary_writer, batch_i, during='train')
-                    plot_weights_and_gradients(model, summary_writer, epoch * batch_i)
-                    log_performance(epoch, epochs, batch_i, total, yolo_loss, metrics, class_names, summary_writer)
+            del images
+            del ground_truth_boxes
 
-                # Accumulates gradient before each step
-                if batch_i % gradient_accumulations == 0:
-                    logger.info(
-                        f"Updating weights for batch {batch_i} (gradient_accumulations :{gradient_accumulations})")
-                    # update the weights
-                    optimizer.step()
-                    # zero the parameter (weight) gradients
-                    optimizer.zero_grad()
+            if limit is not None and batch_i + 1 >= limit:
+                logger.info('Stop here after training {} batches (limit: {})'.format(batch_i, limit))
+                log_performance(epoch, epochs, batch_i, total, yolo_loss, metrics, class_names, summary_writer, log_to_neptune)
+                save_model(model_dir, model, epoch, batch_i)
+                return
 
-                del images
-                del ground_truth_boxes
+            if save_every is not None and batch_i % save_every == 0:
+                save_model(model_dir, model, epoch, batch_i)
 
-                if limit is not None and batch_i + 1 >= limit:
-                    logger.info('Stop here after training {} batches (limit: {})'.format(batch_i, limit))
-                    log_performance(epoch, epochs, batch_i, total, yolo_loss, metrics, class_names, summary_writer)
-                    save_model(model_dir, model, epoch, batch_i)
-                    return
-
-                if save_every is not None and batch_i % save_every == 0:
-                    save_model(model_dir, model, epoch, batch_i)
-
-            # save model after every epoch
-            save_model(model_dir, model, epoch, None)
+        # save model after every epoch
+        save_model(model_dir, model, epoch, None)
 
 
-def log_performance(epoch, epochs, batch_i, total, yolo_loss, metrics, class_names, summary_writer):
+def log_performance(epoch, epochs, batch_i, total, yolo_loss, metrics, class_names, summary_writer, log_to_neptune):
     log_str = "\n---- [Epoch %d/%d, Batch %d/%d] ----\n" % (epoch, epochs, batch_i, total)
     log_str += yolo_loss.print()
     logger.info(log_str)
-
-    neptune.log_metric('iteration', batch_i)
-    neptune.log_metric('loss', yolo_loss.total_loss)
-
     log_average_precision_for_classes(metrics, class_names, summary_writer, epoch * batch_i)
+
+    if log_to_neptune:
+        neptune.log_metric('iteration', batch_i)
+        neptune.log_metric('loss', yolo_loss.total_loss)
 
 
 def log_average_precision_for_classes(metrics, class_names, summary_writer, global_step):

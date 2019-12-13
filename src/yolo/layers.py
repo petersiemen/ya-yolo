@@ -202,7 +202,6 @@ class EagerYoloLayer(nn.Module):
         self.grid_x, self.grid_y, self.anchor_w, self.anchor_h = self.create_grid()
 
     def __repr__(self):
-        out_channels, out_height, out_width = self.get_output_chw()
         return "EagerYoloLayer(num_classes: {}, anchors: {}, input: ({}x{}x{})))".format(self.num_classes,
                                                                                          self.anchors,
                                                                                          self.in_channels,
@@ -275,9 +274,9 @@ class EagerYoloLayer(nn.Module):
             return coordinates, \
                    torch.sigmoid(class_scores) * det_confs.view(self.batch_size,
                                                  self.num_anchors * self.height * self.width).unsqueeze(
-                       -1), \
-                   det_confs.view(self.batch_size,
-                                  self.num_anchors * self.height * self.width)
+                       -1), #\
+                   #det_confs.view(self.batch_size,
+                   #               self.num_anchors * self.height * self.width)
 
         else:
             return coordinates, class_scores, det_confs.view(self.batch_size,

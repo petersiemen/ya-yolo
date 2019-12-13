@@ -15,6 +15,7 @@ def test_tensorboard():
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
     namesfile = os.path.join(HERE, '../cfg/coco.names')
+    class_names = load_class_names(namesfile)
 
     batch_size = 2
     COCO_IMAGES_DIR = '/home/peter/datasets/coco-small/cocoapi/images/train2014'
@@ -36,7 +37,7 @@ def test_tensorboard():
     images, targets, image_paths = next(iter(trainloader))
     print(images.shape)
 
-    model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size)
+    model = Yolo(cfg_file=cfg_file, class_names=class_names, batch_size=batch_size)
     print(model)
     # model.load_weights(weight_file)
 

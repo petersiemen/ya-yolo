@@ -21,10 +21,11 @@ def test_training():
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
     namesfile = os.path.join(HERE, '../cfg/coco.names')
     model_dir = os.path.join(HERE, 'models')
+    class_names = load_class_names(namesfile)
 
     batch_size = 2
     lr = 0.001
-    model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size)
+    model = Yolo(cfg_file=cfg_file, class_names=class_names, batch_size=batch_size)
     model.load_weights(weight_file)
 
     image_and_target_transform = Compose([
@@ -66,19 +67,22 @@ def test_training_car_makes():
     ])
     batch_size = 2
     dataset = DetectedCareMakeDataset(
-        json_file='/home/peter/datasets/detected-cars/more_than_4000_detected_per_make/train.json',
+        json_file=os.path.join(os.environ['HOME'], 'datasets/detected-cars/more_than_4000_detected_per_make/train.json'),
         transforms=image_and_target_transform, batch_size=batch_size)
 
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
-    weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
-    namesfile = os.path.join(HERE, '../cfg/coco.names')
+    #weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
+
+
+
+    class_names = load_class_names(os.path.join(os.environ['HOME'], 'datasets/detected-cars/more_than_4000_detected_per_make/makes.csv'))
     model_dir = os.path.join(HERE, 'models')
 
     lr = 0.001
-    model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size)
-    model.load_weights(weight_file)
-    model.set_num_classes(len(dataset.class_names))
-    model.set_class_names(dataset.class_names)
+    model = Yolo(cfg_file=cfg_file, class_names=class_names, batch_size=batch_size)
+    #model.load_weights(weight_file)
+    model.load_state_dict(
+        torch.load(os.path.join(HERE, '../models/yolo__num_classes_80__epoch_2_batch_7500.pt'), map_location=DEVICE))
 
     summary_writer = SummaryWriter(comment=f' batch_size={batch_size} lr={lr}')
     train(model=model,
@@ -88,7 +92,7 @@ def test_training_car_makes():
           epochs=1,
           lr=lr,
           conf_thres=0.9,
-          nms_thres=0.5,
+          nms_thres=0.7,
           iou_thres=0.5,
           lambda_coord=5,
           lambda_no_obj=0.5,
@@ -96,4 +100,5 @@ def test_training_car_makes():
           limit=3,
           debug=True,
           print_every=10,
-          save_every=1)
+          save_every=1,
+          log_to_neptune=False)

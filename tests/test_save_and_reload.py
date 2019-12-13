@@ -17,12 +17,12 @@ def test_save_and_reload():
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
     namesfile = os.path.join(HERE, '../cfg/coco.names')
     class_names = load_class_names(namesfile)
-    yolo = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=1)
+    yolo = Yolo(cfg_file=cfg_file, class_names=class_names, batch_size=1)
     yolo.load_weights(weight_file)
 
     yolo.save(dir=os.path.join(HERE, 'models'), name='test.pt')
 
-    yolo_from_disc = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=1)
+    yolo_from_disc = Yolo(cfg_file=cfg_file, class_names=class_names, batch_size=1)
     yolo_from_disc.reload(dir=os.path.join(HERE, 'models'), name='test.pt')
 
     image = load_image_file(os.path.join(HERE, './images/car.jpg'))

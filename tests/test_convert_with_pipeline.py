@@ -5,7 +5,7 @@ import coremltools
 from coremltools.models.pipeline import *
 
 HERE = os.path.dirname(os.path.realpath(__file__))
-#cfg_file = os.path.join(HERE, '../cfg/mini-yolov3.cfg')
+# cfg_file = os.path.join(HERE, '../cfg/mini-yolov3.cfg')
 cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
 weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
 namesfile = os.path.join(HERE, '../cfg/coco.names')
@@ -157,5 +157,16 @@ def test_predict_with_pipeline():
     class_scores = output["confidence"]
     # confidence = output["confidence"]
 
-    
     print()
+
+
+def test_covert_pytorch_to_coreml():
+    with open(
+            os.path.join(os.environ['HOME'],
+                         'datasets/detected-cars/more_than_4000_detected_per_make/makes.csv'), encoding="utf-8") as f:
+        class_names = [make.strip() for make in f.readlines()]
+    convert_pytorch_to_coreml(cfg_file=os.path.join(HERE, '../cfg/yolov3.cfg'),
+                              class_names=class_names,
+                              state_dict_file=os.path.join(os.environ['HOME'],
+                                                           'datasets/models/car_makes/yolo__num_classes_80__epoch_2_batch_7500.pt'),
+                              coreml_pipeline_filename=os.path.join(HERE, 'output/YoloPipelineCarMakes.mlmodel'))

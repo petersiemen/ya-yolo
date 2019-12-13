@@ -2,6 +2,7 @@ from .context import *
 import shutil
 import datetime
 
+
 HERE = os.path.dirname(os.path.realpath(__file__))
 COCO_IMAGES_DIR = os.path.join(HERE, '../../../datasets/coco-small/cocoapi/images/train2014')
 COCO_ANNOTATIONS_FILE = os.path.join(COCO_IMAGES_DIR, '../../annotations/instances_train2014_10_per_category.json')

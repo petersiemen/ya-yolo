@@ -2,6 +2,7 @@ import os
 
 import matplotlib.pyplot as plt
 import seaborn as sns
+import os
 from .context import *
 
 HERE = os.path.dirname(os.path.realpath(__file__))
@@ -10,8 +11,9 @@ HERE = os.path.dirname(os.path.realpath(__file__))
 def test_plot_prices():
     sns.set(color_codes=True)
 
-    df = DetectedCarDataset.get_data_frame(
-        '/home/peter/datasets/detected-cars/more_than_4000_detected_per_make/feed.json')
+    df = DetectedCarDataset.get_data_frame(os.path.join(
+        os.environ['HOME'],
+        'datasets/detected-cars/more_than_4000_detected_per_make/feed.json'))
 
     makes = df['make'].unique().tolist()
     i = 0

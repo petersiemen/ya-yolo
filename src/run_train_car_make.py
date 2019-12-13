@@ -40,12 +40,11 @@ def train_car_make(car_make_json_file,
 
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
-    namesfile = os.path.join(HERE, '../cfg/coco.names')
+    #namesfile = os.path.join(HERE, '../cfg/coco.names')
 
-    model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size, coreml_mode=False)
+    model = Yolo(cfg_file=cfg_file, class_names=dataset.class_names, batch_size=batch_size, coreml_mode=False)
     model.load_weights(weight_file)
-    model.set_num_classes(len(dataset.class_names))
-    model.set_class_names(dataset.class_names)
+
     if parameters is not None:
         logger.info(f"loading model parameters from {parameters}")
         model.load_state_dict(
@@ -54,28 +53,28 @@ def train_car_make(car_make_json_file,
 
     summary_writer = SummaryWriter(comment=f' evaluate={batch_size}')
 
-    with neptune.create_experiment(name='start-with-neptune',
-                                   params=PARAMS):
-        neptune.append_tag('first-example')
+    # with neptune.create_experiment(name='start-with-neptune',
+    #                                params=PARAMS):
+    #     neptune.append_tag('first-example')
 
-        train(model=model,
-              dataset=dataset,
-              model_dir=model_dir,
-              summary_writer=summary_writer,
-              epochs=epochs,
-              lr=lr,
-              conf_thres=conf_thres,
-              nms_thres=0.5,
-              iou_thres=0.5,
-              lambda_coord=5,
-              lambda_no_obj=0.5,
-              gradient_accumulations=gradient_accumulations,
-              clip_gradients=clip_gradients,
-              limit=limit,
-              debug=False,
-              print_every=log_every,
-              save_every=save_every)
-        summary_writer.close()
+    train(model=model,
+          dataset=dataset,
+          model_dir=model_dir,
+          summary_writer=summary_writer,
+          epochs=epochs,
+          lr=lr,
+          conf_thres=conf_thres,
+          nms_thres=0.5,
+          iou_thres=0.5,
+          lambda_coord=5,
+          lambda_no_obj=0.5,
+          gradient_accumulations=gradient_accumulations,
+          clip_gradients=clip_gradients,
+          limit=limit,
+          debug=False,
+          print_every=log_every,
+          save_every=save_every)
+    summary_writer.close()
 
 
 def run():
