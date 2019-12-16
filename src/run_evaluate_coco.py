@@ -9,6 +9,7 @@ from datasets.yayolo_coco_dataset import YaYoloCocoDataset
 from logging_config import *
 from yolo.evaluate import evaluate
 from yolo.yolo import Yolo
+from yolo.utils import load_class_names
 
 logger = logging.getLogger(__name__)
 
@@ -21,13 +22,14 @@ def evaluate_coco(image_dir, annotations_file, batch_size,
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
     namesfile = os.path.join(HERE, '../cfg/coco.names')
+    class_names = load_class_names(namesfile)
 
-    model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size)
+    model = Yolo(cfg_file=cfg_file, class_names=class_names, batch_size=batch_size)
     model.load_weights(weight_file)
 
     image_and_target_transform = Compose([
         SquashResize(416),
-        CocoToTensor()
+        ToTensor()
     ])
 
     dataset = YaYoloCocoDataset(images_dir=image_dir, annotations_file=annotations_file,

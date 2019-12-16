@@ -8,7 +8,7 @@ COCO_ANNOTATIONS_FILE = os.path.join(HERE, '../../../datasets/coco-small/annotat
 def test_simple_car_dataset():
     image_and_target_transform = Compose([
         SquashResize(416),
-        CocoToTensor()
+        ToTensor()
     ])
 
     to_pil_image = transforms.Compose([
@@ -16,7 +16,7 @@ def test_simple_car_dataset():
     ])
 
     batch_size = 2
-    dataset = SimpleCarDataset(root_dir='/home/peter/datasets/simple_cars/2019-08-23T10-22-54',
+    dataset = SimpleCarDataset(root_dir=os.path.join(os.environ['HOME'], 'datasets/simple-cars-small'),
                                transforms=image_and_target_transform, batch_size=batch_size)
 
     data_loader = DataLoader(dataset=dataset, shuffle=False, batch_size=batch_size)
@@ -43,24 +43,24 @@ def test_simple_car_dataset():
 
 def test_detected_car_dataset():
     image_and_target_transform = Compose([
+        RandomRotation(15),
         SquashResize(416),
-        CocoToTensor()
+        RandomHorizontalFlip(1),
+
+        ToTensor(),
+        #Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
     ])
 
+
+
     batch_size = 2
-    dataset = DetectedCarDataset(json_file='/home/peter/datasets/detected-cars/more_than_4000_detected_per_make/train.json',
+    dataset = DetectedCarDataset(json_file=os.path.join(os.environ['HOME'], 'datasets/detected-cars/more_than_4000_detected_per_make/train.json'),
                                  transforms=image_and_target_transform, batch_size=batch_size)
 
     data_loader = DataLoader(dataset=dataset, shuffle=False, batch_size=batch_size, collate_fn=dataset.collate_fn)
     limit = 10
 
     for batch_i, (images, ground_truth_boxes, _) in enumerate(data_loader):
-
-        if len(images) != batch_size:
-            print("skipping batch {}. Size {} does not equal expected batch size {}".format(batch_i, len(images),
-                                                                                            batch_size))
-            continue
-
 
         plot_batch(None, ground_truth_boxes, images, None)
         if batch_i > limit:
@@ -70,7 +70,7 @@ def test_detected_car_dataset():
 def test_detected_car_make_dataset():
     image_and_target_transform = Compose([
         SquashResize(416),
-        CocoToTensor()
+        ToTensor()
     ])
 
     batch_size = 2
@@ -88,7 +88,7 @@ def test_detected_car_make_dataset():
             continue
 
 
-        plot_batch(None, ground_truth_boxes, images, dataset._class_names)
+        plot_batch(None, ground_truth_boxes, images, dataset.class_names)
         if batch_i > limit:
             break
 
@@ -97,7 +97,7 @@ def test_coco_dataset():
     batch_size = 3
     image_and_target_transform = Compose([
         SquashResize(416),
-        CocoToTensor()
+        ToTensor()
     ])
 
     dataset = YaYoloCocoDataset(images_dir=COCO_IMAGES_DIR, annotations_file=COCO_ANNOTATIONS_FILE,
@@ -114,7 +114,7 @@ def test_coco_dataset():
 def test_voc_dataset():
     image_and_target_transform = Compose([
         SquashResize(416),
-        CocoToTensor()
+        ToTensor()
     ])
     batch_size = 3
     namesfile = os.path.join(HERE, '../cfg/coco.names')
@@ -137,7 +137,7 @@ def test_voc_dataset():
 def test_image_net():
     image_and_target_transform = Compose([
         SquashResize(416),
-        CocoToTensor()
+        ToTensor()
     ])
     batch_size = 2
     dataset = YaYoloImageNetDataset(root='/home/peter/datasets/ImageNet2012',

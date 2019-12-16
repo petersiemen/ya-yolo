@@ -22,8 +22,16 @@ class Yolo(nn.Module):
         self._adjust_layers_to_num_classes()
 
     def freeze_parameters(self):
-        for param in self.parameters():
-            param.requires_grad = False
+        yolo_indices = [idx for idx, model in enumerate(self.models) if isinstance(model, EagerYoloLayer)]
+        conv_before_yolo = [idx -1 for idx in yolo_indices]
+
+        for idx in range(len(self.models)):
+            if idx in yolo_indices or idx in conv_before_yolo:
+                logger.info(f"Not freezing layer {idx}. Either its a yolo layer or a convolution before")
+            else:
+                for param in self.models[idx].parameters():
+                    param.requires_grad = False
+
 
     def get_trainable_parameters(self):
         yolo_indices = [idx for idx, model in enumerate(self.models) if isinstance(model, EagerYoloLayer)]

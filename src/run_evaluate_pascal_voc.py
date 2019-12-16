@@ -24,12 +24,12 @@ def evaluate_pascal_voc(root_dir, download, batch_size,
     namesfile = os.path.join(HERE, '../cfg/coco.names')
     class_names = load_class_names(namesfile)
 
-    model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size)
+    model = Yolo(cfg_file=cfg_file, class_names=class_names, batch_size=batch_size)
     model.load_weights(weight_file)
 
     image_and_target_transform = Compose([
         SquashResize(416),
-        CocoToTensor()
+        ToTensor()
     ])
 
     dataset = YaYoloVocDataset(root_dir=root_dir,

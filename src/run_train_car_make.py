@@ -32,7 +32,7 @@ def train_car_make(car_make_json_file,
                    parameters):
     image_and_target_transform = Compose([
         SquashResize(416),
-        CocoToTensor()
+        ToTensor()
     ])
 
     dataset = DetectedCareMakeDataset(json_file=car_make_json_file,
@@ -40,7 +40,6 @@ def train_car_make(car_make_json_file,
 
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
-    #namesfile = os.path.join(HERE, '../cfg/coco.names')
 
     model = Yolo(cfg_file=cfg_file, class_names=dataset.class_names, batch_size=batch_size, coreml_mode=False)
     model.load_weights(weight_file)

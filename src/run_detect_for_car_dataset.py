@@ -44,7 +44,7 @@ def run_detect_cars(in_dir, out_dir, batch_size, limit, conf_thres, nms_thres, d
 
         image_and_target_transform = Compose([
             SquashResize(416),
-            CocoToTensor()
+            ToTensor()
         ])
 
         dataset = SimpleCarDataset(

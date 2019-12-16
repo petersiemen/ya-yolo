@@ -11,6 +11,7 @@ from logging_config import *
 from yolo.yolo import Yolo
 from yolo.train import train
 from device import DEVICE
+from yolo.utils import load_class_names
 
 logger = logging.getLogger(__name__)
 
@@ -33,8 +34,10 @@ def train_coco(coco_images_dir,
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
     weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
     namesfile = os.path.join(HERE, '../cfg/coco.names')
-    model = Yolo(cfg_file=cfg_file, namesfile=namesfile, batch_size=batch_size)
+    class_names = load_class_names(namesfile)
+    model = Yolo(cfg_file=cfg_file, class_names=class_names, batch_size=batch_size)
     model.load_weights(weight_file)
+    model.freeze_parameters_of_all_old_layers()
 
     if parameters is not None:
         logger.info(f"loading model parameters from {parameters}")
@@ -42,13 +45,10 @@ def train_coco(coco_images_dir,
             torch.load(parameters,
                        map_location=DEVICE))
 
-    model.freeze_parameters()
-    # this recreates the last convolutional layer before the yolo layer
-    model.set_num_classes(model.num_classes)
 
     image_and_target_transform = Compose([
         SquashResize(416),
-        CocoToTensor()
+        ToTensor()
     ])
 
     dataset = YaYoloCocoDataset(images_dir=coco_images_dir,

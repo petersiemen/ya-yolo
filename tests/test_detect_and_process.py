@@ -2,7 +2,6 @@ from .context import *
 import shutil
 import datetime
 
-
 HERE = os.path.dirname(os.path.realpath(__file__))
 COCO_IMAGES_DIR = os.path.join(HERE, '../../../datasets/coco-small/cocoapi/images/train2014')
 COCO_ANNOTATIONS_FILE = os.path.join(COCO_IMAGES_DIR, '../../annotations/instances_train2014_10_per_category.json')
@@ -11,11 +10,11 @@ COCO_ANNOTATIONS_FILE = os.path.join(COCO_IMAGES_DIR, '../../annotations/instanc
 def test_detect_and_process_for_detected_car_dataset():
     image_and_target_transform = Compose([
         SquashResize(416),
-        CocoToTensor()
+        ToTensor()
     ])
     batch_size = 3
 
-    dataset = SimpleCarDataset(root_dir=os.path.join(os.environ['HOME'],'datasets/simple-cars-small'),
+    dataset = SimpleCarDataset(root_dir=os.path.join(os.environ['HOME'], 'datasets/simple-cars-small'),
                                transforms=image_and_target_transform, batch_size=batch_size)
 
     detected_cars = os.path.join(HERE, 'output/detected-cars')
@@ -57,7 +56,7 @@ def test_detect_and_process_for_detected_car_dataset():
 def test_detect_and_process_for_detected_car_dataset_with_missing_images():
     image_and_target_transform = Compose([
         SquashResize(416),
-        CocoToTensor()
+        ToTensor()
     ])
 
     dataset = SimpleCarDataset(root_dir='/home/peter/datasets/missing-images',

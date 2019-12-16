@@ -30,7 +30,7 @@ def test_training():
 
     image_and_target_transform = Compose([
         SquashResize(416),
-        CocoToTensor()
+        ToTensor()
     ])
 
     dataset = YaYoloCocoDataset(images_dir=COCO_IMAGES_DIR, annotations_file=COCO_ANNOTATIONS_FILE,
@@ -63,7 +63,7 @@ def test_training():
 def test_training_car_makes():
     image_and_target_transform = Compose([
         SquashResize(416),
-        CocoToTensor()
+        ToTensor()
     ])
     batch_size = 2
     dataset = DetectedCareMakeDataset(
@@ -73,8 +73,6 @@ def test_training_car_makes():
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
     #weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
 
-
-
     class_names = load_class_names(os.path.join(os.environ['HOME'], 'datasets/detected-cars/more_than_4000_detected_per_make/makes.csv'))
     model_dir = os.path.join(HERE, 'models')
 
@@ -83,6 +81,7 @@ def test_training_car_makes():
     #model.load_weights(weight_file)
     model.load_state_dict(
         torch.load(os.path.join(HERE, '../models/yolo__num_classes_80__epoch_2_batch_7500.pt'), map_location=DEVICE))
+
 
     summary_writer = SummaryWriter(comment=f' batch_size={batch_size} lr={lr}')
     train(model=model,
