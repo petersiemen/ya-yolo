@@ -234,7 +234,7 @@ def train(model,
 
             if batch_i % print_every == 0:  # print every print_every +1  batches
                 yolo_loss.capture(summary_writer, batch_i, during='train')
-                plot_weights_and_gradients(model, summary_writer, epoch * batch_i)
+                #plot_weights_and_gradients(model, summary_writer, epoch * batch_i)
                 log_performance(epoch, epochs, batch_i, total, yolo_loss, metrics, class_names, summary_writer,log_to_neptune)
 
             # Accumulates gradient before each step
