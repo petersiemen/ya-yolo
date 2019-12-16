@@ -169,7 +169,7 @@ def train(model,
         f'lambda_coord: {lambda_coord}, lambda_no_obj: {lambda_no_obj}, '
         f'conf_thres: {conf_thres}, nms_thres:{nms_thres}, iou_thres: {iou_thres}, '
         f'gradient_accumulations: {gradient_accumulations}, '
-        f'clip_gradients: {clip_gradients}')
+        f'clip_gradients: {clip_gradients}, lambda_no_obj: {lambda_no_obj}')
     metrics = Metrics()
 
     model.to(DEVICE)

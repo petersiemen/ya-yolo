@@ -29,7 +29,8 @@ def train_car_make(car_make_json_file,
                    log_every,
                    save_every,
                    model_dir,
-                   parameters):
+                   parameters,
+                   lambda_no_obj):
     image_and_target_transform = Compose([
         SquashResize(416),
         ToTensor()
@@ -66,7 +67,7 @@ def train_car_make(car_make_json_file,
           nms_thres=0.5,
           iou_thres=0.5,
           lambda_coord=5,
-          lambda_no_obj=0.5,
+          lambda_no_obj=lambda_no_obj,
           gradient_accumulations=gradient_accumulations,
           clip_gradients=clip_gradients,
           limit=limit,
@@ -135,6 +136,12 @@ def run():
                         metavar="FILE",
                         help="if given we initialize the model with these params")
 
+    parser.add_argument( "--lambda-no-obj", dest="lambda_no_obj",
+                        default=0.5,
+                        type=float,
+                        help="weight for the no object loss")
+
+
     args = parser.parse_args()
     if args.car_make_json_file is None:
         parser.print_help()
@@ -152,6 +159,7 @@ def run():
         model_dir = args.model_dir
         save_every = args.save_every
         parameters = args.parameters
+        lambda_no_obj = args.lambda_no_obj
 
         train_car_make(car_make_json_file,
                        batch_size,
@@ -164,7 +172,8 @@ def run():
                        log_every,
                        save_every,
                        model_dir,
-                       parameters)
+                       parameters,
+                       lambda_no_obj)
 
         sys.exit(0)
 

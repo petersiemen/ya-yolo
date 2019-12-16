@@ -2,6 +2,9 @@ import torch
 import torch.nn as nn
 from device import DEVICE
 from terminaltables import AsciiTable
+from logging_config import *
+
+logger = logging.getLogger(__name__)
 
 
 class YoloLoss():
@@ -38,6 +41,7 @@ class YoloLoss():
                  target_class_scores,
                  lambda_coord=5,
                  lambda_no_obj=0.5):
+        logger.info(f"Init YoloLoss with lambda_coord:{lambda_coord} and lambda_no_obj {lambda_no_obj}")
         self.lambda_coord = lambda_coord
         self.lambda_no_obj = lambda_no_obj
 
@@ -50,14 +54,14 @@ class YoloLoss():
         self.target_coordinates = target_coordinates
         self.target_confidence = target_confidence
         self.target_class_scores = target_class_scores
-        self.localization_loss = self.compute_localization_loss().to(DEVICE)
+        self.localization_loss = self.lambda_coord * self.compute_localization_loss().to(DEVICE)
         self.objectness_loss = self.compute_objectness_loss().to(DEVICE)
-        self.no_objectness_loss = self.compute_no_objectness_loss().to(DEVICE)
+        self.no_objectness_loss = self.lambda_no_obj * self.compute_no_objectness_loss().to(DEVICE)
         self.classification_loss = self.compute_classification_loss().to(DEVICE)
 
-        self.total_loss = self.lambda_coord * self.localization_loss + \
+        self.total_loss = self.localization_loss + \
                           self.objectness_loss + \
-                          self.lambda_no_obj * self.no_objectness_loss + \
+                          self.no_objectness_loss + \
                           self.classification_loss
 
     def get(self):
