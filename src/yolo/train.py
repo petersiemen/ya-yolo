@@ -229,7 +229,7 @@ def train(model,
             loss.backward()
 
             if clip_gradients:
-                logger.info("Clipping gradients with max_norm = 1")
+                logger.debug("Clipping gradients with max_norm = 1")
                 clip_grad_norm_(model.parameters(), max_norm=1)
 
             if batch_i % print_every == 0:  # print every print_every +1  batches
@@ -239,7 +239,7 @@ def train(model,
 
             # Accumulates gradient before each step
             if batch_i % gradient_accumulations == 0:
-                logger.info(
+                logger.debug(
                     f"Updating weights for batch {batch_i} (gradient_accumulations :{gradient_accumulations})")
                 # update the weights
                 optimizer.step()
