@@ -24,6 +24,7 @@ from pathlib import Path  # python3 only
 random.seed(0)
 
 logger = logging.getLogger(__name__)
+logger.setLevel("INFO")
 
 
 def get_indices_for_center_of_bounding_boxes(num_anchors, grid_widths, x, y):
