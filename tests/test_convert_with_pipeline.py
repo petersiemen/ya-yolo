@@ -21,7 +21,7 @@ core_ml_with_nms_filename_in_yolo_ios = os.path.join(HERE, '../../yolo-ios/YoloI
 
 coreml_pipeline_filename = os.path.join(HERE, 'output/YoloPipeline.mlmodel')
 coreml_pipeline_filename_in_yolo_ios = os.path.join(HERE, '../../yolo-ios/YoloIOS/Models/YoloPipeline.mlmodel')
-
+coreml_pipeline_filename_in_yolo_simple_ios = os.path.join(HERE, '../../yolo-simple-ios/YoloSimpleIOS/YoloPipeline.mlmodel')
 
 def test_convert_to_onnx():
     # yolo model
@@ -151,7 +151,7 @@ def test_predict_with_pipeline():
         SquashResize(416),
     ])
     to_tensor = Compose([
-        CocoToTensor()
+        ToTensor()
     ])
 
     model = coremltools.models.MLModel(coreml_pipeline_filename)
@@ -188,7 +188,7 @@ def test_convert_pytorch_to_coreml():
 def test_predict_cars_with_pipeline():
     image_and_target_transform = Compose([
         SquashResize(416),
-        CocoToTensor()
+        ToTensor()
     ])
     to_pil_image = transforms.Compose([
         ToPILImage()

@@ -61,26 +61,26 @@ def test_training():
 
 
 def test_training_car_makes():
+    dataset_path = os.path.join(os.environ['HOME'], 'datasets/detected-cars/2019-12-14T08-49-12')
+    state_dict_path = os.path.join(HERE, '../models/yolo__num_classes_21__epoch_2_batch_2000.pt')
+
     image_and_target_transform = Compose([
         SquashResize(416),
         ToTensor()
     ])
     batch_size = 2
     dataset = DetectedCareMakeDataset(
-        json_file=os.path.join(os.environ['HOME'], 'datasets/detected-cars/more_than_4000_detected_per_make/train.json'),
+        json_file=os.path.join(dataset_path, 'train.json'),
         transforms=image_and_target_transform, batch_size=batch_size)
 
     cfg_file = os.path.join(HERE, '../cfg/yolov3.cfg')
-    #weight_file = os.path.join(HERE, '../cfg/yolov3.weights')
 
-    class_names = load_class_names(os.path.join(os.environ['HOME'], 'datasets/detected-cars/more_than_4000_detected_per_make/makes.csv'))
+    class_names = load_class_names(os.path.join(dataset_path, 'makes.csv'))
     model_dir = os.path.join(HERE, 'models')
 
     lr = 0.001
     model = Yolo(cfg_file=cfg_file, class_names=class_names, batch_size=batch_size)
-    #model.load_weights(weight_file)
-    model.load_state_dict(
-        torch.load(os.path.join(HERE, '../models/yolo__num_classes_80__epoch_2_batch_7500.pt'), map_location=DEVICE))
+    model.load_state_dict(torch.load(state_dict_path, map_location=DEVICE))
 
 
     summary_writer = SummaryWriter(comment=f' batch_size={batch_size} lr={lr}')
